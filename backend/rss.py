@@ -1,6 +1,7 @@
 """Poll feed RSS di feeds.yaml dan kirim artikelnya ke POST /ingest (duplikat URL dibuang oleh API)."""
 import argparse
 import logging
+import socket
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,10 +11,12 @@ import httpx
 import yaml
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+socket.setdefaulttimeout(20)  # satu feed yang lambat tidak boleh menahan polling feed lain selamanya
+AGENT = "Mozilla/5.0 (compatible; WASPADA-OSINT/1.0)"  # beberapa penerbit menolak user-agent bawaan feedparser
 
 
 def articles_from(feed):
-    parsed = feedparser.parse(feed["url"])
+    parsed = feedparser.parse(feed["url"], agent=AGENT)
     for entry in parsed.entries:
         when = entry.get("published_parsed") or entry.get("updated_parsed")
         ts = datetime(*when[:6], tzinfo=timezone.utc) if when else datetime.now(timezone.utc)

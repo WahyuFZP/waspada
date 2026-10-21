@@ -42,6 +42,17 @@ def test_natuna_scenario_escalates_medium_high_critical():
     assert r.json() == {"events": 0, "alerts": [], "skipped_duplicates": 1}
 
 
+def test_source_url_must_be_http_and_reaches_discord():
+    art = {"timestamp": "2026-10-23T08:00:00Z", "source": "a", "region": "domestic", "title": "Insiden di Papua"}
+    r = client.post("/ingest", json={**art, "url": "javascript:alert(1)"})
+    assert r.status_code == 422
+
+    from notify import discord_payload
+    event = normalize({**art, "url": "https://example.com/berita/1"}, load_topics())[0]
+    alert = {"rule": "r", "severity": "high", "group": {"topic": "papua"}, "timestamp": art["timestamp"], "events": [event]}
+    assert "[Insiden di Papua](https://example.com/berita/1)" in discord_payload(alert)["embeds"][0]["description"]
+
+
 def test_invalid_article_rejected_whole_batch():
     good = {"timestamp": "2026-10-22T08:00:00Z", "source": "a", "region": "domestic", "title": "Insiden di Papua"}
     r = client.post("/ingest", json=[good, {**good, "region": "mars"}])

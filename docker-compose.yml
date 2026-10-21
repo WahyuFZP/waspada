@@ -22,7 +22,8 @@ services:
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     ports: ["8000:8000"]
     volumes: ["./backend:/app"]  # kode live; --reload memuat ulang saat file diubah
-    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+    # graceful timeout: stream SSE tidak pernah selesai sendiri, tanpa ini --reload menunggu selamanya
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2
     depends_on:
       db: {condition: service_healthy}
 

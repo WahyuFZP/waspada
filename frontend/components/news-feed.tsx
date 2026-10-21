@@ -5,6 +5,7 @@ import { useState } from "react";
 import { eventLabel, formatTime, REGION_LABEL, topicLabel } from "@/lib/api";
 import type { Event } from "@/lib/types";
 import { Segmented } from "./segmented";
+import { SourceLink } from "./source-link";
 
 type Region = "all" | Event["region"];
 
@@ -56,6 +57,7 @@ export function NewsFeed({ events, loaded }: { events: Event[]; loaded: boolean 
                 <span className="rounded-sm bg-surface-2 px-1.5 py-0.5 text-ink-muted">{topicLabel(e.topic)}</span>
                 <span className="rounded-sm bg-surface-2 px-1.5 py-0.5 text-ink-muted">{eventLabel(e.event_type)}</span>
               </p>
+              <SourceLink url={e.url} />
             </motion.li>
           ))}
         </AnimatePresence>

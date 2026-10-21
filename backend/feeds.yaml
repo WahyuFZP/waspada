@@ -1,5 +1,28 @@
   # Feed RSS publik. region: domestic | foreign. Cek ulang URL sebelum demo; penerbit kadang memindahkan feed.
+  # Semua URL di bawah dicek 21 Okt 2026 (status 200, >= 10 artikel). Tribunnews, Suara, Kompas, Jakarta Post
+  # tidak dimasukkan: feed-nya menolak akses (403/404) atau bukan XML yang valid.
+
+  # Dalam negeri
   - {name: antara, region: domestic, url: "https://www.antaranews.com/rss/terkini.xml"}
+  - {name: antara_en, region: domestic, url: "https://en.antaranews.com/rss/news.xml"}
   - {name: cnnindonesia, region: domestic, url: "https://www.cnnindonesia.com/nasional/rss"}
+  - {name: cnbcindonesia, region: domestic, url: "https://www.cnbcindonesia.com/news/rss"}
+  - {name: detik, region: domestic, url: "https://news.detik.com/berita/rss"}
+  - {name: tempo, region: domestic, url: "https://rss.tempo.co/nasional"}
+  - {name: republika, region: domestic, url: "https://www.republika.co.id/rss"}
+  - {name: okezone, region: domestic, url: "https://sindikasi.okezone.com/index.php/rss/1/RSS2.0"}
+  - {name: sindonews, region: domestic, url: "https://nasional.sindonews.com/rss"}
+  - {name: liputan6, region: domestic, url: "https://feed.liputan6.com/rss/news"}
+
+  # Luar negeri
   - {name: bbc, region: foreign, url: "https://feeds.bbci.co.uk/news/world/asia/rss.xml"}
+  - {name: bbc_world, region: foreign, url: "https://feeds.bbci.co.uk/news/world/rss.xml"}
   - {name: aljazeera, region: foreign, url: "https://www.aljazeera.com/xml/rss/all.xml"}
+  - {name: guardian, region: foreign, url: "https://www.theguardian.com/world/asia-pacific/rss"}
+  - {name: cna, region: foreign, url: "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml"}
+  - {name: straitstimes, region: foreign, url: "https://www.straitstimes.com/news/asia/rss.xml"}
+  - {name: scmp, region: foreign, url: "https://www.scmp.com/rss/91/feed"}
+  - {name: thediplomat, region: foreign, url: "https://thediplomat.com/feed/"}
+  - {name: abc_au, region: foreign, url: "https://www.abc.net.au/news/feed/51120/rss.xml"}
+  - {name: dw, region: foreign, url: "https://rss.dw.com/rdf/rss-en-asia"}
+  - {name: defensenews, region: foreign, url: "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml"}

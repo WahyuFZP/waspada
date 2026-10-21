@@ -30,6 +30,15 @@ const EVENT_LABEL: Record<string, string> = {
 };
 export const eventLabel = (t: string) => EVENT_LABEL[t] ?? t;
 
+// "https://www.antaranews.com/berita/123" -> "antaranews.com"; backend sudah menolak url selain http(s)
+export const hostOf = (url?: string | null) => {
+  try {
+    return url ? new URL(url).hostname.replace(/^www\./, "") : null;
+  } catch {
+    return null;
+  }
+};
+
 // "siber_nasional" -> "Siber nasional"
 export const topicLabel = (t?: string) => (t ? t[0].toUpperCase() + t.slice(1).replace(/_/g, " ") : "-");
 

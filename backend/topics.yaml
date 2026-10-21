@@ -3,13 +3,14 @@
 # Keyword dicocokkan case-insensitive sebagai kata utuh pada judul + ringkasan ("kri" tidak cocok dengan "kritik").
 
 topics:
-  natuna: [natuna, laut china selatan, south china sea, zee indonesia]
+  natuna: [natuna, laut china selatan, laut cina selatan, laut natuna utara, north natuna sea, south china sea, zee indonesia]
   papua: [papua, kkb, opm]
-  siber_nasional: [serangan siber, peretasan, ransomware, kebocoran data, data breach, cyberattack]
+  siber_nasional: [serangan siber, peretasan, peretas, ransomware, malware, kebocoran data, data breach, cyberattack, cyber attack, ddos, bssn]
   perbatasan_timor: [atambua, motaain, perbatasan timor, timor leste border]
+  terorisme: [teroris, terorisme, densus 88, terrorism, terrorist]
 
 categories:
-  incident: [insiden, kapal asing, menerobos, pelanggaran, intrusion, incursion, bentrok, clash, serangan, attack, peretasan, bocor, breach]
-  diplomatic: [nota protes, protes diplomatik, memanggil duta besar, kemlu, kementerian luar negeri, diplomatic protest, summons ambassador, foreign ministry]
-  military: [kerahkan, pengerahan, kri, tni, latihan militer, siaga, deploy, warship, navy, military drill, armada]
+  incident: [insiden, kapal asing, menerobos, pelanggaran, intrusion, incursion, bentrok, clash, serangan, penyerangan, attack, ledakan, explosion, standoff, collision, peretasan, bocor, breach, hacked]
+  diplomatic: [nota protes, protes diplomatik, memanggil duta besar, duta besar, diplomatik, menlu, kemlu, kementerian luar negeri, diplomatic protest, summons ambassador, ambassador, diplomat, foreign ministry]
+  military: [kerahkan, pengerahan, kri, tni, militer, pasukan, tentara, bakamla, alutsista, latihan militer, siaga, deploy, warship, navy, naval, military, troops, armed forces, coast guard, armada]
   economic: [nelayan, perikanan, embargo, sanksi, fishing, sanctions]

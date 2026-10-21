@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { eventLabel, formatTime, REGION_LABEL, topicLabel } from "@/lib/api";
 import type { Alert } from "@/lib/types";
 import { SeverityBadge } from "./severity-badge";
+import { SourceLink } from "./source-link";
 
 function span(alert: Alert) {
   const times = alert.events.map((e) => new Date(e.timestamp).getTime());
@@ -93,16 +94,8 @@ export function AlertDetail({ alert, onClose }: { alert: Alert | null; onClose: 
                     Langkah {i + 1} · {formatTime(e.timestamp)} · {e.source} · {REGION_LABEL[e.region]} ·{" "}
                     {eventLabel(e.event_type)}
                   </p>
-                  <p className="mt-1 leading-snug">
-                    {e.url ? (
-                      <a href={e.url} target="_blank" rel="noreferrer" className="underline-offset-4 hover:underline">
-                        {e.title}
-                        <span className="sr-only"> (membuka tab baru)</span>
-                      </a>
-                    ) : (
-                      e.title
-                    )}
-                  </p>
+                  <p className="mt-1 leading-snug">{e.title}</p>
+                  <SourceLink url={e.url} />
                 </motion.li>
               ))}
             </ol>

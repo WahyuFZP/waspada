@@ -8,7 +8,9 @@ COLORS = {"low": 0x3498DB, "medium": 0xF1C40F, "high": 0xE67E22, "critical": 0xE
 
 
 def discord_payload(alert):
-    lines = [f"`{e['timestamp']}` **{e['source']}** ({e['region']}) {e['event_type']}: {e['title']}"
+    # judul jadi link Discord [judul](url) supaya analis bisa langsung membuka berita aslinya
+    lines = [f"`{e['timestamp']}` **{e['source']}** ({e['region']}) {e['event_type']}: "
+             + (f"[{e['title']}]({e['url']})" if e.get("url") else e["title"])
              for e in alert["events"]]
     group = ", ".join(f"{k}={v}" for k, v in alert["group"].items())
     return {"embeds": [{

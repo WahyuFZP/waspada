@@ -2,6 +2,7 @@
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -28,7 +29,10 @@ def normalize(article, topics):
             raise ValueError(f"field wajib kosong: {field}")
     if article["region"] not in REGIONS:
         raise ValueError(f"region harus salah satu dari {sorted(REGIONS)}")
-    ts = parse_ts(article["timestamp"]).astimezone(timezone.utc)
+    # url dipasang sebagai link di dashboard & Discord: hanya http(s), tolak javascript:/data: dan sejenisnya
+    if article.get("url") and urlsplit(str(article["url"])).scheme not in ("http", "https"):
+        raise ValueError("url harus diawali http:// atau https://")
+    ts =parse_ts(article["timestamp"]).astimezone(timezone.utc)
 
     text = f"{article['title']} {article.get('summary', '')}"
     base = {
