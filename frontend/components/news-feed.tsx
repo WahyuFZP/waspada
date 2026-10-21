@@ -13,7 +13,7 @@ export function NewsFeed({ events, loaded }: { events: Event[]; loaded: boolean 
   const shown = region === "all" ? events : events.filter((e) => e.region === region);
 
   return (
-    <section aria-labelledby="feed-title" className="flex min-w-0 flex-col gap-4">
+    <section id="arus-berita" aria-labelledby="feed-title" className="flex min-w-0 flex-col gap-4">
       <h2 id="feed-title" className="font-display text-3xl font-bold">
         Arus Berita
       </h2>
@@ -46,7 +46,7 @@ export function NewsFeed({ events, loaded }: { events: Event[]; loaded: boolean 
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3, delay: i === 0 ? 0.05 : 0 }}
-              className="rounded-md border border-line bg-surface p-3"
+              className="rounded-xl border border-line bg-white/[0.02] p-3"
             >
               <p className="font-data text-xs text-ink-muted">
                 {formatTime(e.timestamp)} · {e.source} · {REGION_LABEL[e.region]}

@@ -2,10 +2,10 @@
 
 /* Token: lihat DESIGN.md */
 @theme {
-  --color-bg: #12150e;
-  --color-surface: #1a1f14;
-  --color-surface-2: #232a1a;
-  --color-line: #343c27;
+  --color-bg: #0b0d08;
+  --color-surface: #13170e;
+  --color-surface-2: #1c2215;
+  --color-line: #2a3120;
   --color-army: #4b5320;
   --color-ink: #eceae0;
   --color-ink-muted: #a6ac92;
@@ -24,6 +24,11 @@
   --font-data: var(--font-plex-mono), monospace;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* jangan tertutup nav sticky saat lompat ke anchor */
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-ink);
@@ -33,4 +38,42 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-gold);
   outline-offset: 2px;
+}
+
+/* Radar hero: hanya berputar saat stream SSE terhubung (kelas .is-live), jadi gerak = status nyata */
+@keyframes radar-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes radar-ping {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+.radar .radar-sweep {
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.radar.is-live .radar-sweep {
+  opacity: 1;
+  animation: radar-sweep 6s linear infinite;
+}
+.radar.is-live .radar-ping {
+  animation: radar-ping 3s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .radar .radar-sweep,
+  .radar .radar-ping {
+    animation: none !important;
+  }
 }

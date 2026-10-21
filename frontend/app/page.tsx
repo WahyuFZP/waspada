@@ -6,6 +6,7 @@ import { AlertDetail } from "@/components/alert-detail";
 import { AlertList } from "@/components/alert-list";
 import { ConnectionStatus } from "@/components/connection-status";
 import { CriticalToast } from "@/components/critical-toast";
+import { Hero } from "@/components/hero";
 import { NewsFeed } from "@/components/news-feed";
 import { StatsBar } from "@/components/stats-bar";
 import { useAlertStream } from "@/hooks/use-alert-stream";
@@ -29,34 +30,85 @@ export default function Dashboard() {
   const close = useCallback(() => setSelectedId(null), []);
   const dismissToast = useCallback(() => setToast(null), []);
   const selected = alerts.find((a) => a.id === selectedId) ?? null;
+  const live = status === "live";
 
   return (
     <MotionConfig reducedMotion="user">
-      <div inert={selected !== null} className="mx-auto flex min-h-dvh max-w-[1600px] flex-col gap-6 p-4 md:p-6">
-        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
-          <div>
-            <h1 className="font-display text-4xl font-bold leading-none md:text-5xl">
-              WASPADA
-            </h1>
-            <p className="mt-2 text-ink-muted">Pusat pemantauan isu strategis dari pemberitaan dalam dan luar negeri</p>
+      <div inert={selected !== null}>
+        <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
+          <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
+            <div className="flex items-center gap-8">
+              <a href="#" className="font-display text-2xl font-bold leading-none">
+                WASPADA
+              </a>
+              <ul className="font-data hidden gap-6 text-xs text-ink-muted sm:flex">
+                <li>
+                  <a href="#pemantauan" className="hover:text-ink">
+                    Pemantauan
+                  </a>
+                </li>
+                <li>
+                  <a href="#arus-berita" className="hover:text-ink">
+                    Arus berita
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <ConnectionStatus status={status} />
           </div>
-          <ConnectionStatus status={status} />
-        </header>
+        </nav>
 
-        {status === "reconnecting" && !loaded && (
-          <p role="alert" className="rounded-md border border-sev-critical/50 bg-sev-critical/10 p-4 text-sm">
-            Server pemantauan di <span className="font-data">{API}</span> belum dapat dijangkau. Mohon pastikan
-            backend aktif (<span className="font-data">docker compose up</span>). Sistem akan menyambung ulang secara
-            otomatis.
-          </p>
-        )}
+        <Hero status={status} />
 
-        <StatsBar alerts={alerts} events={events} />
+        <section
+          id="pemantauan"
+          aria-label="Pemantauan langsung"
+          className="mx-auto mb-16 max-w-[1400px] px-4 md:px-6"
+        >
+          <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]">
+            {/* bingkai jendela gaya template (disetujui pemilik); status di kanan mencerminkan koneksi SSE nyata */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 md:px-5">
+              <div className="flex items-center gap-4">
+                <span aria-hidden className="flex gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-[#5a2b2b]" />
+                  <span className="h-3 w-3 rounded-full bg-[#5a4d26]" />
+                  <span className="h-3 w-3 rounded-full bg-[#2f4a2a]" />
+                </span>
+                <span className="font-data text-xs text-ink-muted">
+                  waspada <span aria-hidden>/</span> <span className="text-ink">pemantauan_isu</span>
+                </span>
+              </div>
+              <span
+                className={`font-data rounded-md border px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] ${
+                  live ? "border-army bg-army/30 text-ink" : "border-sev-critical/50 bg-sev-critical/10 text-sev-critical"
+                }`}
+              >
+                {live ? "Pemantauan aktif" : "Pemantauan terputus"}
+              </span>
+            </div>
 
-        <main className="grid flex-1 gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <AlertList alerts={alerts} loaded={loaded} freshIds={freshIds} onOpen={open} />
-          <NewsFeed events={events} loaded={loaded} />
-        </main>
+            <div className="flex flex-col gap-6 p-4 md:p-6">
+              {status === "reconnecting" && !loaded && (
+                <p role="alert" className="rounded-lg border border-sev-critical/50 bg-sev-critical/10 p-4 text-sm">
+                  Server pemantauan di <span className="font-data">{API}</span> belum dapat dijangkau. Mohon pastikan
+                  backend aktif (<span className="font-data">docker compose up</span>). Sistem akan menyambung ulang
+                  secara otomatis.
+                </p>
+              )}
+
+              <StatsBar alerts={alerts} events={events} />
+
+              <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_400px]">
+                <AlertList alerts={alerts} loaded={loaded} freshIds={freshIds} onOpen={open} />
+                <NewsFeed events={events} loaded={loaded} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer className="font-data border-t border-line px-4 py-6 text-center text-xs text-ink-muted">
+          WASPADA · Data demo bersifat sintetis atau berasal dari RSS publik. Murni pemantauan, bukan alat ofensif.
+        </footer>
       </div>
 
       <AlertDetail alert={selected} onClose={close} />

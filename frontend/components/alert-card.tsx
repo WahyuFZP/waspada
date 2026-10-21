@@ -28,7 +28,7 @@ export function AlertCard({ alert, fresh, onOpen }: { alert: Alert; fresh: boole
             : undefined
         }
         transition={{ duration: 1.1, repeat: 1 }}
-        className={`group flex w-full flex-col gap-3 rounded-md border bg-surface p-4 text-left transition-colors hover:bg-surface-2 ${
+        className={`group flex w-full flex-col gap-3 rounded-xl border bg-white/[0.02] p-4 text-left transition-colors hover:bg-surface-2 ${
           critical ? "border-sev-critical/50" : "border-line"
         }`}
       >

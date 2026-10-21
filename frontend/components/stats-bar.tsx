@@ -5,8 +5,8 @@ import type { Alert, Event } from "@/lib/types";
 
 function Stat({ label, value, tone = "text-ink" }: { label: string; value: number; tone?: string }) {
   return (
-    <div className="rounded-md border border-line bg-surface px-4 py-3">
-      <dt className="font-data text-xs text-ink-muted">{label}</dt>
+    <div className="rounded-xl border border-line bg-white/[0.02] px-4 py-4">
+      <dt className="font-data text-[11px] uppercase tracking-[0.12em] text-ink-muted">{label}</dt>
       <dd className={`font-display mt-1 h-10 overflow-hidden text-4xl font-bold leading-10 tabular-nums ${tone}`}>
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span

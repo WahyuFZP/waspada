@@ -1,6 +1,18 @@
-# WASPADA — Design System
+# WASPADA: Design System
 
 Dashboard pemantauan isu strategis untuk analis SOC. Dipandang lama dan dari jarak pandang, jadi tampilan gelap, tenang, dan warna hanya membawa makna.
+
+Dial: ENERGY 2 / RHYTHM 2 / MOTION 2
+
+## Struktur (branch `frontend-template`)
+
+Mengikuti pola template "Cybersecurity Services" (aura.build): nav sticky, hero besar dengan judul dua warna, lalu panel dashboard berbingkai jendela. Bedanya, panel di WASPADA adalah dashboard live yang asli, bukan mockup, dan tidak ada statistik karangan.
+
+Pengecualian antislop yang disetujui pemilik (21 Okt 2026):
+- Glow radial di belakang judul hero: dipertahankan, satu saja, warna hijau TNI-AD (bukan merah template, supaya merah tetap khusus alert kritis).
+- Radar beranimasi di hero: dipertahankan; hanya berputar saat stream SSE terhubung, jadi gerakannya menandai status nyata. Mati saat *reduce motion*.
+- Bingkai jendela tiga titik di atas panel pemantauan: dipertahankan sebagai identitas visual template.
+- Label kecil huruf kapital berjarak renggang: dipertahankan untuk label statistik dan status panel.
 
 ## Warna (token di `app/globals.css`)
 
@@ -8,14 +20,14 @@ Diambil dari identitas TNI Angkatan Darat: hijau loreng sebagai dasar, emas lamb
 
 | Token | Nilai | Dipakai untuk |
 |---|---|---|
-| `bg` | `#12150E` | Latar halaman, hijau-hitam, bukan hitam pekat |
-| `surface` | `#1A1F14` | Panel dan kartu |
-| `surface-2` | `#232A1A` | Kartu terpilih, hover |
-| `line` | `#343C27` | Garis pemisah |
+| `bg` | `#0B0D08` | Latar halaman, hijau-hitam, bukan hitam pekat |
+| `surface` | `#13170E` | Panel dan kartu |
+| `surface-2` | `#1C2215` | Kartu terpilih, hover |
+| `line` | `#2A3120` | Garis pemisah |
 | `army` | `#4B5320` | Hijau TNI-AD: state aktif (filter terpilih) |
 | `ink` | `#ECEAE0` | Teks utama |
 | `ink-muted` | `#A6AC92` | Teks sekunder (kontras 7:1 di atas `bg`) |
-| `gold` | `#D4A72C` | Aksen: focus ring dan titik media luar negeri di timeline (putih = dalam negeri) |
+| `gold` | `#D4A72C` | Aksen: baris kedua judul hero, tombol utama, focus ring, titik media luar negeri di timeline |
 
 Severity selalu ditulis dengan label teks, bukan hanya warna:
 
