@@ -1,5 +1,5 @@
-# Feed RSS publik. region: domestic | foreign. Cek ulang URL sebelum demo; penerbit kadang memindahkan feed.
-- {name: antara, region: domestic, url: "https://www.antaranews.com/rss/terkini.xml"}
-- {name: cnnindonesia, region: domestic, url: "https://www.cnnindonesia.com/nasional/rss"}
-- {name: bbc, region: foreign, url: "https://feeds.bbci.co.uk/news/world/asia/rss.xml"}
-- {name: aljazeera, region: foreign, url: "https://www.aljazeera.com/xml/rss/all.xml"}
+  # Feed RSS publik. region: domestic | foreign. Cek ulang URL sebelum demo; penerbit kadang memindahkan feed.
+  - {name: antara, region: domestic, url: "https://www.antaranews.com/rss/terkini.xml"}
+  - {name: cnnindonesia, region: domestic, url: "https://www.cnnindonesia.com/nasional/rss"}
+  - {name: bbc, region: foreign, url: "https://feeds.bbci.co.uk/news/world/asia/rss.xml"}
+  - {name: aljazeera, region: foreign, url: "https://www.aljazeera.com/xml/rss/all.xml"}
