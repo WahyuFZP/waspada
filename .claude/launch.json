@@ -4,7 +4,7 @@
     {
       "name": "backend",
       "runtimeExecutable": "docker",
-      "runtimeArgs": ["run", "--rm", "--name", "waspada-backend", "-p", "8000:8000", "-v", "C:/Users/Wahyu/Project/Waspada/backend:/app", "-w", "/app", "-e", "WASPADA_DB=/tmp/waspada.db", "python:3.12-slim", "sh", "-c", "pip install -q --root-user-action=ignore -r requirements.txt && uvicorn app:app --host 0.0.0.0 --port 8000"],
+      "runtimeArgs": ["compose", "up", "--build"],
       "port": 8000
     },
     {

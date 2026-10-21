@@ -12,7 +12,7 @@ Semua data demo **sintetis** (ditandai `[SINTETIS]`) atau berita publik dari RSS
 | Ingest | `backend/app.py` (`POST /ingest`), `backend/rss.py` | Artikel masuk via HTTP atau polling RSS |
 | Normalisasi | `backend/normalize.py` + `topics.yaml` | Artikel → event seragam: `topic` (entity) + `event_type` (`news.incident`, `news.diplomatic`, `news.military`, ...) |
 | Korelasi | `backend/engine.py` + `rules.yaml` | Sliding window per topik, rule = urutan langkah (threshold / sequence / cross-source) |
-| Output | `backend/notify.py`, SQLite, SSE | Discord webhook, tabel `alerts`, stream real-time ke dashboard |
+| Output | `backend/notify.py`, `backend/store.py` (PostgreSQL, JSONB), SSE | Discord webhook, tabel `alerts`, stream real-time ke dashboard |
 
 Rule dan kamus topik ada di YAML — tambah rule tanpa menyentuh engine.
 Window dihitung dari **timestamp event**, bukan jam dinding, jadi replay demo deterministik.
@@ -51,20 +51,22 @@ Window dihitung dari **timestamp event**, bukan jam dinding, jadi replay demo de
 
 ## Menjalankan
 
+Backend + PostgreSQL lewat Docker Compose (hanya butuh Docker Desktop):
+
 ```bash
-cd backend
-python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt
-.venv/Scripts/uvicorn app:app --reload
+docker compose up --build
 ```
 
-Opsional: set `DISCORD_WEBHOOK_URL` untuk alert ke Discord, `CORS_ORIGINS` (default `http://localhost:3000`).
+API di http://localhost:8000 (docs: `/docs`), Postgres di `localhost:5432` (user/password/db: `waspada`).
+Opsional: set `DISCORD_WEBHOOK_URL` sebelum `docker compose up` untuk alert ke Discord, `CORS_ORIGINS` (default `http://localhost:3000`).
 
 Demo (skenario sintetis, deterministik):
 
 ```bash
-.venv/Scripts/python replay.py scenarios/natuna.jsonl --delay 1.5
+docker compose exec backend python replay.py scenarios/natuna.jsonl --delay 1.5
 ```
+
+Mulai demo dari data kosong: `docker compose down -v` (menghapus volume Postgres) lalu `docker compose up` lagi.
 
 Dashboard (Next.js, alert real-time via SSE `/stream`):
 
@@ -76,8 +78,6 @@ npm run dev
 
 Buka http://localhost:3000. URL backend bisa diganti lewat `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
 
-Tanpa Python lokal, backend bisa jalan di Docker (lihat konfigurasi `backend` di `.claude/launch.json`).
+Polling RSS nyata: `docker compose exec backend python rss.py` (feed di `feeds.yaml`).
 
-Polling RSS nyata: `.venv/Scripts/python rss.py` (feed di `feeds.yaml`).
-
-Test: `.venv/Scripts/pytest`
+Test (memakai database terpisah `waspada_test`): `docker compose exec backend pytest -q -p no:cacheprovider`

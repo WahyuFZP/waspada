@@ -1,34 +1,39 @@
-"""Penyimpanan SQLite: event dan alert disimpan sebagai JSON untuk audit."""
-import json
-import sqlite3
+"""Penyimpanan PostgreSQL: event dan alert disimpan sebagai JSONB untuk audit."""
+import psycopg
+from psycopg.types.json import Jsonb
 
 
 class Store:
-    def __init__(self, path="waspada.db"):
-        self.db = sqlite3.connect(path, check_same_thread=False)
-        self.db.executescript("""
-            CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, ts TEXT, url TEXT, body TEXT);
-            CREATE TABLE IF NOT EXISTS alerts (id TEXT PRIMARY KEY, ts TEXT, body TEXT);
+    def __init__(self, url):
+        # autocommit: tiap insert langsung tersimpan; satu koneksi cukup untuk skala demo
+        self.db = psycopg.connect(url, autocommit=True)
+        self.db.execute("""
+            CREATE TABLE IF NOT EXISTS events (
+                id BIGSERIAL PRIMARY KEY, ts TIMESTAMPTZ NOT NULL, url TEXT, body JSONB NOT NULL);
+            CREATE INDEX IF NOT EXISTS events_url ON events (url);
+            CREATE INDEX IF NOT EXISTS events_ts ON events (ts DESC);
+            CREATE TABLE IF NOT EXISTS alerts (id TEXT PRIMARY KEY, ts TIMESTAMPTZ NOT NULL, body JSONB NOT NULL);
         """)
 
     def add_event(self, event):
-        self.db.execute("INSERT INTO events (ts, url, body) VALUES (?, ?, ?)",
-                        (event["timestamp"], event.get("url"), json.dumps(event)))
-        self.db.commit()
+        self.db.execute("INSERT INTO events (ts, url, body) VALUES (%s, %s, %s)",
+                        (event["timestamp"], event.get("url"), Jsonb(event)))
 
     def add_alert(self, alert):
-        self.db.execute("INSERT INTO alerts VALUES (?, ?, ?)", (alert["id"], alert["timestamp"], json.dumps(alert)))
-        self.db.commit()
+        self.db.execute("INSERT INTO alerts VALUES (%s, %s, %s)", (alert["id"], alert["timestamp"], Jsonb(alert)))
 
     def seen_url(self, url):
-        return url is not None and self.db.execute("SELECT 1 FROM events WHERE url = ?", (url,)).fetchone() is not None
+        return url is not None and self.db.execute("SELECT 1 FROM events WHERE url = %s", (url,)).fetchone() is not None
 
     def _latest(self, table, limit):
-        rows = self.db.execute(f"SELECT body FROM {table} ORDER BY ts DESC LIMIT ?", (limit,))
-        return [json.loads(r[0]) for r in rows]
+        return [r[0] for r in self.db.execute(f"SELECT body FROM {table} ORDER BY ts DESC, id DESC LIMIT %s", (limit,))]
 
     def events(self, limit=200):
         return self._latest("events", limit)
 
     def alerts(self, limit=50):
         return self._latest("alerts", limit)
+
+    def reset(self):
+        """Kosongkan tabel (dipakai test)."""
+        self.db.execute("TRUNCATE events, alerts")

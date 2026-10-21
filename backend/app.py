@@ -19,7 +19,7 @@ app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("CORS_ORIGINS", 
 topics = load_topics()
 # shortcut: state window hanya di memori, hilang saat restart; muat ulang dari tabel events jika perlu tahan restart
 engine = Engine(load_rules())
-store = Store(os.environ.get("WASPADA_DB", "waspada.db"))
+store = Store(os.environ.get("DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada"))
 subscribers: set[asyncio.Queue] = set()
 
 

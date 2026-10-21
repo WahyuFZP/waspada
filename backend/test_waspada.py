@@ -2,14 +2,16 @@ import json
 import os
 from pathlib import Path
 
-os.environ["WASPADA_DB"] = ":memory:"
+# DB terpisah (dibuat oleh db/init.sql) supaya test tidak menghapus data demo
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada_test")
 os.environ.pop("DISCORD_WEBHOOK_URL", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import app  # noqa: E402
+from app import app, store  # noqa: E402
 from normalize import load_topics, normalize  # noqa: E402
 
+store.reset()
 client = TestClient(app)
 SCENARIO = Path(__file__).parent / "scenarios" / "natuna.jsonl"
 
