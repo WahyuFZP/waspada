@@ -1,0 +1,15 @@
+# Kamus normalisasi. Artikel yang cocok dengan satu topic + satu category menjadi satu event.
+# topic = entity untuk group_by; category = event_type (news.<category>).
+# Keyword dicocokkan case-insensitive sebagai kata utuh pada judul + ringkasan ("kri" tidak cocok dengan "kritik").
+
+topics:
+  natuna: [natuna, laut china selatan, south china sea, zee indonesia]
+  papua: [papua, kkb, opm]
+  siber_nasional: [serangan siber, peretasan, ransomware, kebocoran data, data breach, cyberattack]
+  perbatasan_timor: [atambua, motaain, perbatasan timor, timor leste border]
+
+categories:
+  incident: [insiden, kapal asing, menerobos, pelanggaran, intrusion, incursion, bentrok, clash, serangan, attack, peretasan, bocor, breach]
+  diplomatic: [nota protes, protes diplomatik, memanggil duta besar, kemlu, kementerian luar negeri, diplomatic protest, summons ambassador, foreign ministry]
+  military: [kerahkan, pengerahan, kri, tni, latihan militer, siaga, deploy, warship, navy, military drill, armada]
+  economic: [nelayan, perikanan, embargo, sanksi, fishing, sanctions]
