@@ -1,12 +1,36 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Token: lihat DESIGN.md */
+@theme {
+  --color-bg: #12150e;
+  --color-surface: #1a1f14;
+  --color-surface-2: #232a1a;
+  --color-line: #343c27;
+  --color-army: #4b5320;
+  --color-ink: #eceae0;
+  --color-ink-muted: #a6ac92;
+  --color-gold: #d4a72c;
+
+  --color-sev-critical: #f05252;
+  --color-sev-high: #f2913d;
+  --color-sev-medium: #eadb5b;
+  --color-sev-low: #9aa08a;
 }
 
-/* command center: selalu gelap */
+/* inline: variabel next/font dipasang di <body>, jadi utilitas harus merujuknya langsung, bukan lewat :root */
+@theme inline {
+  --font-display: var(--font-barlow-condensed), sans-serif;
+  --font-body: var(--font-public-sans), sans-serif;
+  --font-data: var(--font-plex-mono), monospace;
+}
+
 body {
-  background: #07090d;
-  color: #e6e8eb;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-public-sans), sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
 }
