@@ -1,0 +1,33 @@
+# Rule = urutan langkah dalam satu window, per group_by.
+# Tiap langkah: match (field: nilai atau list nilai), count (default 1), distinct (field yang harus beda-beda).
+# Langkah ke-n hanya menghitung event yang datang setelah langkah ke-(n-1) terpenuhi.
+#   threshold    = satu langkah dengan count
+#   sequence     = beberapa langkah berurutan
+#   cross-source = langkah yang match ke region/source berbeda
+
+- name: Lonjakan pemberitaan
+  severity: medium
+  window: 1h
+  group_by: [topic]
+  steps:
+    - match: {event_type: [news.incident, news.diplomatic, news.military, news.economic]}
+      count: 5
+      distinct: source
+      min_distinct: 3
+
+- name: Insiden diikuti respons diplomatik
+  severity: high
+  window: 6h
+  group_by: [topic]
+  steps:
+    - match: {event_type: news.incident}
+    - match: {event_type: news.diplomatic}
+
+- name: Isu memanas lintas wilayah
+  severity: critical
+  window: 24h
+  group_by: [topic]
+  steps:
+    - match: {event_type: news.incident, region: domestic}
+    - match: {event_type: news.diplomatic, region: foreign}
+    - match: {event_type: news.military}
