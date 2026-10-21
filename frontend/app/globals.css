@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* command center: selalu gelap */
+body {
+  background: #07090d;
+  color: #e6e8eb;
+}
