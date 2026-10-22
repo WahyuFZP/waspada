@@ -4,6 +4,53 @@
 #   threshold    = satu langkah dengan count
 #   sequence     = beberapa langkah berurutan
 #   cross-source = langkah yang match ke region/source berbeda
+# mitre (opsional): teknik MITRE ATT&CK yang diwakili rule, ditampilkan di alert (https://attack.mitre.org).
+
+# ---------- Log internal + threat intel (threat-informed) ----------
+
+- name: Pemindaian port
+  severity: medium
+  window: 5m
+  group_by: [src_ip]
+  mitre: [{id: T1046, name: Network Service Discovery}]
+  steps:
+    - match: {event_type: ids.scan}
+      count: 5
+      distinct: dest_port
+      min_distinct: 5
+
+- name: Eksploitasi pada aset rentan KEV
+  severity: high
+  window: 30d  # status rentan dari KEV berlaku lama; serangan bisa datang berminggu-minggu kemudian
+  group_by: [host]
+  mitre: [{id: T1190, name: Exploit Public-Facing Application}]
+  steps:
+    - match: {event_type: vuln.kev_match}
+    - match: {event_type: ids.exploit_attempt}
+
+- name: Brute force berhasil masuk
+  severity: high
+  window: 10m
+  group_by: [src_ip, host]
+  mitre: [{id: T1110, name: Brute Force}, {id: T1078, name: Valid Accounts}]
+  steps:
+    - match: {event_type: auth.failed}
+      count: 10
+    - match: {event_type: auth.success}
+
+- name: Intrusi berhasil pada aset rentan
+  severity: critical
+  window: 30d
+  group_by: [host]
+  mitre:
+    - {id: T1190, name: Exploit Public-Facing Application}
+    - {id: T1078, name: Valid Accounts}
+  steps:
+    - match: {event_type: vuln.kev_match}
+    - match: {event_type: ids.exploit_attempt}
+    - match: {event_type: auth.success}
+
+# ---------- OSINT berita (konteks geopolitik) ----------
 
 - name: Lonjakan pemberitaan
   severity: medium

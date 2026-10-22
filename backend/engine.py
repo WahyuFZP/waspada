@@ -75,6 +75,7 @@ class Engine:
                     "id": uuid.uuid4().hex,
                     "rule": rule["name"],
                     "severity": rule["severity"],
+                    "mitre": rule.get("mitre", []),  # [{id, name}] teknik MITRE ATT&CK, dari rules.yaml
                     "group": group,
                     "timestamp": support[-1]["timestamp"],
                     "events": support,

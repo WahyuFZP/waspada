@@ -3,12 +3,20 @@ export type Severity = "low" | "medium" | "high" | "critical";
 
 export type Event = {
   timestamp: string;
-  source: string;
-  region: "domestic" | "foreign";
+  source: string; // nama media, atau "auth" / "suricata" / "cisa_kev"
   event_type: string;
-  topic: string;
   title: string;
   url?: string | null;
+  demo?: boolean; // data simulasi dari replay
+  // berita (OSINT)
+  region?: "domestic" | "foreign";
+  topic?: string;
+  // log keamanan & intel ancaman
+  host?: string;
+  src_ip?: string;
+  user?: string;
+  dest_port?: number | null;
+  cve?: string | null;
 };
 
 export type Alert = {
@@ -18,4 +26,5 @@ export type Alert = {
   group: Record<string, string>;
   timestamp: string;
   events: Event[];
+  mitre?: { id: string; name: string }[];
 };

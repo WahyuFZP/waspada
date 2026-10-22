@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "motion/react";
-import { formatTime, REGION_LABEL, topicLabel } from "@/lib/api";
+import { formatTime, groupLabel, originLabel } from "@/lib/api";
 import type { Alert } from "@/lib/types";
 import { SeverityBadge } from "./severity-badge";
 
 export function AlertCard({ alert, fresh, onOpen }: { alert: Alert; fresh: boolean; onOpen: () => void }) {
   const sources = new Set(alert.events.map((e) => e.source)).size;
-  const regions = [...new Set(alert.events.map((e) => REGION_LABEL[e.region]))].join(" & ");
+  const origins = [...new Set(alert.events.map(originLabel))].join(" & ");
   const critical = alert.severity === "critical";
 
   return (
@@ -38,8 +38,11 @@ export function AlertCard({ alert, fresh, onOpen }: { alert: Alert; fresh: boole
         </span>
         <span className="font-display text-2xl font-semibold leading-tight">{alert.rule}</span>
         <span className="font-data text-xs text-ink-muted">
-          Topik {topicLabel(alert.group.topic)} · {alert.events.length} berita · {sources} media · {regions}
+          {groupLabel(alert.group)} · {alert.events.length} kejadian · {sources} sumber · {origins}
         </span>
+        {alert.mitre?.length ? (
+          <span className="font-data text-xs text-gold">MITRE {alert.mitre.map((t) => t.id).join(", ")}</span>
+        ) : null}
         <span className="font-data text-xs text-ink-muted underline-offset-4 transition-colors group-hover:text-ink group-hover:underline">
           Lihat rangkaian kejadian
         </span>

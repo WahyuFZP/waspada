@@ -1,10 +1,12 @@
-"""Artikel mentah -> event ternormalisasi (satu event per pasangan topic x category yang cocok)."""
+"""Record mentah -> event ternormalisasi. Artikel: satu event per pasangan topic x category yang cocok."""
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
 import yaml
+
+import parsers
 
 REGIONS = {"domestic", "foreign"}
 
@@ -22,8 +24,24 @@ def parse_ts(value):
     return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
 
 
-def normalize(article, topics):
-    """Validasi artikel (batas kepercayaan: datang dari luar) lalu petakan ke nol atau lebih event."""
+def normalize(article, topics, assets=None):
+    """Validasi record (batas kepercayaan: datang dari luar) lalu petakan ke nol atau lebih event.
+
+    Field 'kind' memilih parser: news (default, artikel RSS), auth (sshd), suricata (eve.json), kev (kev.py).
+    """
+    kind = article.get("kind", "news")
+    if kind != "news":
+        if kind == "auth":
+            events = parsers.parse_auth(article, parse_ts)
+        elif kind == "suricata":
+            events = parsers.parse_suricata(article, parse_ts, assets or {"by_ip": {}})
+        elif kind == "kev":
+            events = parsers.parse_kev(article, parse_ts)
+        else:
+            raise ValueError(f"kind tidak dikenal: {kind!r}")
+        # penanda data simulasi supaya dashboard bisa melabelinya dan data demo mudah dihapus
+        return [{**e, "demo": bool(article.get("demo"))} for e in events]
+
     for field in ("timestamp", "source", "region", "title"):
         if not article.get(field):
             raise ValueError(f"field wajib kosong: {field}")
@@ -42,6 +60,7 @@ def normalize(article, topics):
         "title": article["title"],
         "url": article.get("url"),
         "raw": article,
+        "demo": bool(article.get("demo")),
     }
     return [
         {**base, "topic": topic, "event_type": f"news.{cat}"}
