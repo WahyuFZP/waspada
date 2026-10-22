@@ -31,8 +31,8 @@ export function StatsBar({ alerts, events }: { alerts: Alert[]; events: Event[] 
     <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <Stat label="Peringatan" value={alerts.length} />
       <Stat label="Tingkat kritis" value={critical} tone={critical ? "text-sev-critical" : "text-ink"} />
-      <Stat label="Media terpantau" value={new Set(events.map((e) => e.source)).size} />
-      <Stat label="Berita terkorelasi" value={events.length} />
+      <Stat label="Sumber terpantau" value={new Set(events.map((e) => e.source)).size} />
+      <Stat label="Kejadian terkorelasi" value={events.length} />
     </dl>
   );
 }

@@ -53,8 +53,53 @@ def test_source_url_must_be_http_and_reaches_discord():
     assert "[Insiden di Papua](https://example.com/berita/1)" in discord_payload(alert)["embeds"][0]["description"]
 
 
+def test_auth_parser_reads_sshd_and_ignores_other_lines():
+    ok = normalize({"kind": "auth", "line": "Oct 22 09:15:30 srv-web-01 sshd[1]: Accepted publickey for budi from 10.0.0.7 port 5 ssh2",
+                    "timestamp": "2026-10-22T09:15:30Z"}, load_topics())
+    assert [(e["event_type"], e["host"], e["user"], e["src_ip"]) for e in ok] == [("auth.success", "srv-web-01", "budi", "10.0.0.7")]
+    bad_user = normalize({"kind": "auth", "line": "Oct 22 09:15:31 srv-web-01 sshd[1]: Failed password for invalid user admin from 10.0.0.7 port 5 ssh2"}, load_topics())
+    assert bad_user[0]["event_type"] == "auth.failed" and bad_user[0]["user"] == "admin"
+    assert normalize({"kind": "auth", "line": "Oct 22 09:15:32 srv-web-01 sshd[1]: pam_unix(sshd:session): session opened"}, load_topics()) == []
+
+
+def test_suricata_rejects_bad_ip_and_kev_matches_assets():
+    r = client.post("/ingest", json={"kind": "suricata", "event_type": "alert", "timestamp": "2026-10-22T09:00:00Z",
+                                     "src_ip": "not-an-ip", "dest_ip": "10.10.1.20", "alert": {"signature": "x"}})
+    assert r.status_code == 422
+
+    from kev import match_kev
+    from parsers import load_assets
+    vulns = [{"cveID": "CVE-2024-21762", "vendorProject": "Fortinet", "product": "FortiOS and FortiProxy SSL-VPN"},
+             {"cveID": "CVE-2000-0001", "vendorProject": "Other", "product": "FortiOS"}]
+    assert [(m["host"], m["cve"]) for m in match_kev(vulns, load_assets()["hosts"], "2026-10-22T00:00:00Z")] == [("fw-01", "CVE-2024-21762")]
+
+
+def test_intrusion_scenario_correlates_kev_ids_and_auth():
+    severities = []
+    for line in (SCENARIO.parent / "intrusi.jsonl").read_text(encoding="utf-8").splitlines():
+        r = client.post("/ingest", json=json.loads(line))
+        assert r.status_code == 200, r.text
+        new = {a["id"]: a for a in client.get("/alerts").json()}
+        severities += [(new[i]["rule"], new[i]["severity"]) for i in r.json()["alerts"]]
+    assert severities == [("Pemindaian port", "medium"), ("Eksploitasi pada aset rentan KEV", "high"),
+                          ("Brute force berhasil masuk", "high"), ("Intrusi berhasil pada aset rentan", "critical")]
+
+    # brute force & intrusi punya timestamp sama, jadi cari berdasarkan nama rule, bukan posisi
+    critical = next(a for a in client.get("/alerts").json() if a["rule"] == "Intrusi berhasil pada aset rentan")
+    assert critical["group"] == {"host": "srv-web-01"}  # IP tujuan Suricata dipetakan ke host lewat assets.yaml
+    assert [e["source"] for e in critical["events"]] == ["cisa_kev", "suricata", "auth"]
+    assert [t["id"] for t in critical["mitre"]] == ["T1190", "T1078"]
+    assert all(e["demo"] for e in critical["events"])
+
+    # kev.py mengirim ulang CVE yang sama untuk host yang sama -> dibuang sebagai duplikat
+    kev_line = json.loads((SCENARIO.parent / "intrusi.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    r = client.post("/ingest", json={**kev_line, "timestamp": "2026-10-23T00:00:00Z"})
+    assert r.json()["skipped_duplicates"] == 1 and r.json()["events"] == 0
+
+
 def test_invalid_article_rejected_whole_batch():
-    good = {"timestamp": "2026-10-22T08:00:00Z", "source": "a", "region": "domestic", "title": "Insiden di Papua"}
+    # timestamp unik: tidak boleh sama dengan event dari test lain di DB test yang sama
+    good = {"timestamp": "2026-10-25T08:00:00Z", "source": "a", "region": "domestic", "title": "Insiden di Papua"}
     r = client.post("/ingest", json=[good, {**good, "region": "mars"}])
     assert r.status_code == 422
     assert all(e["timestamp"] != good["timestamp"] for e in client.get("/events").json())

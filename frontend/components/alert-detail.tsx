@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef } from "react";
-import { eventLabel, formatTime, REGION_LABEL, topicLabel } from "@/lib/api";
+import { eventLabel, facts, formatTime, groupLabel, isExternal, mitreUrl, originLabel } from "@/lib/api";
 import type { Alert } from "@/lib/types";
 import { SeverityBadge } from "./severity-badge";
 import { SourceLink } from "./source-link";
@@ -60,10 +60,27 @@ export function AlertDetail({ alert, onClose }: { alert: Alert | null; onClose: 
                   {alert.rule}
                 </h2>
                 <p className="mt-2 text-ink-muted">
-                  Topik {topicLabel(alert.group.topic)}: {alert.events.length} berita dari{" "}
-                  {new Set(alert.events.map((e) => e.source)).size} media dalam rentang {span(alert)}. Setiap berita
+                  {groupLabel(alert.group)}: {alert.events.length} kejadian dari{" "}
+                  {new Set(alert.events.map((e) => e.source)).size} sumber dalam rentang {span(alert)}. Setiap kejadian
                   tampak biasa; rangkaiannya memenuhi aturan korelasi.
                 </p>
+                {alert.mitre?.length ? (
+                  <ul aria-label="Teknik MITRE ATT&CK" className="mt-3 flex flex-wrap gap-2">
+                    {alert.mitre.map((t) => (
+                      <li key={t.id}>
+                        <a
+                          href={mitreUrl(t.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-data inline-flex min-h-9 items-center rounded-md border border-gold/40 bg-gold/10 px-2.5 text-xs text-gold hover:bg-gold/20"
+                        >
+                          {t.id} {t.name}
+                          <span className="sr-only"> (membuka MITRE ATT&CK di tab baru)</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
               <button
                 ref={closeRef}
@@ -87,15 +104,17 @@ export function AlertDetail({ alert, onClose }: { alert: Alert | null; onClose: 
                   <span
                     aria-hidden
                     className={`absolute -left-[6px] top-1 h-[11px] w-[11px] rounded-full border-2 border-surface ${
-                      e.region === "domestic" ? "bg-ink" : "bg-gold"
+                      isExternal(e) ? "bg-gold" : "bg-ink"
                     }`}
                   />
                   <p className="font-data text-xs text-ink-muted">
-                    Langkah {i + 1} · {formatTime(e.timestamp)} · {e.source} · {REGION_LABEL[e.region]} ·{" "}
+                    Langkah {i + 1} · {formatTime(e.timestamp)} · {e.source} · {originLabel(e)} ·{" "}
                     {eventLabel(e.event_type)}
+                    {e.demo && <span className="ml-2 rounded-sm bg-surface-2 px-1.5 py-0.5">Simulasi</span>}
                   </p>
                   <p className="mt-1 leading-snug">{e.title}</p>
-                  <SourceLink url={e.url} />
+                  {facts(e) && <p className="font-data mt-1 text-xs text-ink-muted">{facts(e)}</p>}
+                  {(e.url || e.region) && <SourceLink url={e.url} />}
                 </motion.li>
               ))}
             </ol>

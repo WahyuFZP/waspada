@@ -22,13 +22,48 @@ export const SEVERITY_LABEL: Record<Severity, string> = {
 
 export const REGION_LABEL = { domestic: "Dalam negeri", foreign: "Luar negeri" } as const;
 
+// asal kejadian: berita punya region, log keamanan tidak (internal), KEV adalah intel ancaman eksternal
+export const originLabel = (e: Event) =>
+  e.region ? REGION_LABEL[e.region] : e.source === "cisa_kev" ? "Intel ancaman" : "Log internal";
+
+// sumber dari luar satuan (media asing, intel ancaman) diberi penanda emas di timeline
+export const isExternal = (e: Event) => e.region === "foreign" || e.source === "cisa_kev";
+
+// rincian teknis log keamanan dalam satu baris; kosong untuk berita
+export const facts = (e: Event) =>
+  [
+    e.host && `host ${e.host}`,
+    e.src_ip && `dari ${e.src_ip}`,
+    e.user && `user ${e.user}`,
+    e.dest_port != null && `port ${e.dest_port}`,
+    e.cve,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
 const EVENT_LABEL: Record<string, string> = {
   "news.incident": "Insiden",
   "news.diplomatic": "Diplomatik",
   "news.military": "Militer",
   "news.economic": "Ekonomi",
+  "auth.failed": "Login gagal",
+  "auth.success": "Login berhasil",
+  "ids.scan": "Pemindaian",
+  "ids.exploit_attempt": "Upaya eksploitasi",
+  "ids.alert": "Alert IDS",
+  "vuln.kev_match": "Kerentanan KEV",
 };
 export const eventLabel = (t: string) => EVENT_LABEL[t] ?? t;
+
+const GROUP_LABEL: Record<string, string> = { topic: "Topik", host: "Host", src_ip: "IP sumber", user: "User" };
+// {host: "srv-web-01", src_ip: "203.0.113.50"} -> "Host srv-web-01 · IP sumber 203.0.113.50"
+export const groupLabel = (group: Record<string, string>) =>
+  Object.entries(group)
+    .map(([k, v]) => `${GROUP_LABEL[k] ?? k} ${k === "topic" ? topicLabel(v) : v}`)
+    .join(" · ");
+
+// T1110 -> https://attack.mitre.org/techniques/T1110/, T1110.001 -> .../T1110/001/
+export const mitreUrl = (id: string) => `https://attack.mitre.org/techniques/${id.replace(".", "/")}/`;
 
 // "https://www.antaranews.com/berita/123" -> "antaranews.com"; backend sudah menolak url selain http(s)
 export const hostOf = (url?: string | null) => {

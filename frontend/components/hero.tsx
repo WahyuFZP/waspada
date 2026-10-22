@@ -33,15 +33,16 @@ export function Hero({ status }: { status: StreamStatus }) {
       <div className="mx-auto max-w-6xl text-center">
         <h1 id="hero-title" className="font-display text-5xl font-bold leading-[0.95] sm:text-6xl md:text-8xl">
           <motion.span className="block" {...rise(0)}>
-            Satu berita tampak biasa.
+            Satu kejadian tampak biasa.
           </motion.span>
           <motion.span className="block text-gold" {...rise(0.12)}>
             Rangkaiannya adalah ancaman.
           </motion.span>
         </h1>
         <motion.p className="mx-auto mt-6 max-w-2xl text-base text-ink-muted md:text-lg" {...rise(0.25)}>
-          WASPADA mengorelasikan pemberitaan media dalam dan luar negeri, lalu memberi peringatan otomatis ketika
-          sebuah isu strategis mulai memanas, sebelum analis harus menyaring ribuan berita secara manual.
+          WASPADA mengorelasikan log keamanan satuan, katalog kerentanan yang sedang dieksploitasi (CISA KEV), dan
+          pemberitaan dalam serta luar negeri, lalu memberi peringatan otomatis lengkap dengan teknik MITRE ATT&amp;CK,
+          sebelum analis harus menyaring ribuan kejadian secara manual.
         </motion.p>
         <motion.div className="mt-8 flex flex-wrap justify-center gap-3" {...rise(0.35)}>
           <a

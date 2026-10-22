@@ -1,4 +1,7 @@
-"""Replay skenario sintetis (JSONL, satu artikel per baris) ke POST /ingest — demo deterministik."""
+"""Replay skenario sintetis (JSONL, satu record per baris: artikel, log auth, Suricata, KEV) ke POST /ingest.
+
+Demo deterministik: natuna.jsonl (OSINT berita), intrusi.jsonl (log internal + CISA KEV).
+"""
 import argparse
 import json
 import time
@@ -18,7 +21,9 @@ for article in articles:
     r = httpx.post(f"{args.api}/ingest", json=article, timeout=15)
     r.raise_for_status()
     result = r.json()
-    print(f"{article['timestamp']} {article['source']:<8} {article['title']}")
+    # artikel punya title; log auth punya line; Suricata punya alert.signature; KEV punya cve
+    label = article.get("title") or article.get("line") or (article.get("alert") or {}).get("signature") or article.get("cve")
+    print(f"{article['timestamp']} {article.get('source') or article.get('kind', ''):<8} {label}")
     print(f"    -> {result['events']} event, {len(result['alerts'])} alert"
           + (" (duplikat, dilewati)" if result["skipped_duplicates"] else ""))
     time.sleep(args.delay)

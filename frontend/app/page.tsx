@@ -49,7 +49,7 @@ export default function Dashboard() {
                 </li>
                 <li>
                   <a href="#arus-berita" className="hover:text-ink">
-                    Arus berita
+                    Arus kejadian
                   </a>
                 </li>
               </ul>

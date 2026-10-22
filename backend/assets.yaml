@@ -1,0 +1,29 @@
+# Inventaris aset satuan (CONTOH untuk demo, bukan aset nyata). Dipakai untuk:
+#  - memetakan IP tujuan di log Suricata ke nama host
+#  - mencocokkan produk dengan katalog CISA KEV (kev.py)
+# Pencocokan KEV: vendor sama persis (tanpa beda huruf besar/kecil) dan nama produk terkandung di produk KEV.
+# KEV tidak memuat versi, jadi kecocokan berarti "berpotensi rentan, perlu verifikasi versi".
+
+demo: true  # ubah ke false setelah diisi aset nyata; selama true, hasil kev.py berlabel "Simulasi" di dashboard
+
+hosts:
+  - host: srv-web-01
+    ip: 10.10.1.20
+    role: Portal web satuan
+    products:
+      - {vendor: Apache, product: HTTP Server}
+  - host: fw-01
+    ip: 10.10.0.1
+    role: Firewall perimeter
+    products:
+      - {vendor: Fortinet, product: FortiOS}
+  - host: vpn-01
+    ip: 10.10.0.5
+    role: Gateway VPN personel
+    products:
+      - {vendor: Ivanti, product: Connect Secure}
+  - host: mail-01
+    ip: 10.10.1.30
+    role: Server email
+    products:
+      - {vendor: Microsoft, product: Exchange Server}
