@@ -65,7 +65,7 @@ export function AlertList({
             aria-pressed={!hidden.has(s)}
             onClick={() => toggle(s)}
             className={`font-data min-h-11 rounded-md border px-3 text-xs transition-colors ${
-              hidden.has(s) ? "border-line text-ink-muted line-through" : "border-army bg-army/40 text-ink"
+              hidden.has(s) ? "border-line text-ink-muted line-through" : "border-siber bg-siber/40 text-ink"
             }`}
           >
             {SEVERITY_LABEL[s]} ({alerts.filter((a) => a.severity === s).length})

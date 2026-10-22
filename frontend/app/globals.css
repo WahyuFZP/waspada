@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
-/* Token: lihat DESIGN.md */
+/* Token: lihat DESIGN.md. Warna diambil dari lambang Pussiberad: perisai hijau, bingkai emas, bola merah-putih. */
 @theme {
-  --color-bg: #0b0d08;
-  --color-surface: #13170e;
-  --color-surface-2: #1c2215;
-  --color-line: #2a3120;
-  --color-army: #4b5320;
-  --color-ink: #eceae0;
-  --color-ink-muted: #a6ac92;
-  --color-gold: #d4a72c;
+  --color-bg: #070d08;
+  --color-surface: #0d170f;
+  --color-surface-2: #142217;
+  --color-line: #213426;
+  --color-siber: #3f7a40; /* hijau perisai, digelapkan agar teks putih di atasnya tetap kontras */
+  --color-siber-bright: #60b45f; /* sorotan perisai: status hidup / sesuai */
+  --color-ink: #f1f4ef;
+  --color-ink-muted: #a7b8a6;
+  --color-gold: #d6af58; /* bingkai & pita emas */
 
   --color-sev-critical: #f05252;
   --color-sev-high: #f2913d;
@@ -40,40 +41,8 @@ body {
   outline-offset: 2px;
 }
 
-/* Radar hero: hanya berputar saat stream SSE terhubung (kelas .is-live), jadi gerak = status nyata */
-@keyframes radar-sweep {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes radar-ping {
-  0% {
-    transform: scale(0.4);
-    opacity: 0.6;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
-}
-.radar .radar-sweep {
-  opacity: 0;
-  transition: opacity 0.6s;
-}
-.radar.is-live .radar-sweep {
-  opacity: 1;
-  animation: radar-sweep 6s linear infinite;
-}
-.radar.is-live .radar-ping {
-  animation: radar-ping 3s ease-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  .radar .radar-sweep,
-  .radar .radar-ping {
-    animation: none !important;
   }
 }

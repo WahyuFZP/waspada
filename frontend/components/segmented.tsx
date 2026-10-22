@@ -28,7 +28,7 @@ export function Segmented<T extends string>({ id, label, options, value, onChang
               layoutId={id}
               // hanya animasikan saat pilihan berganti, bukan saat halaman bergeser karena alert baru
               layoutDependency={value}
-              className="absolute inset-0 rounded bg-army"
+              className="absolute inset-0 rounded bg-siber"
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
             />
           )}

@@ -1,7 +1,7 @@
 import type { StreamStatus } from "@/hooks/use-alert-stream";
 
 const STATUS: Record<StreamStatus, { label: string; dot: string; text: string }> = {
-  live: { label: "Terhubung", dot: "bg-emerald-400", text: "text-emerald-300" },
+  live: { label: "Terhubung", dot: "bg-siber-bright", text: "text-siber-bright" },
   connecting: { label: "Menghubungkan", dot: "bg-ink-muted", text: "text-ink-muted" },
   reconnecting: { label: "Terputus, menyambung ulang", dot: "bg-sev-critical", text: "text-sev-critical" },
 };
