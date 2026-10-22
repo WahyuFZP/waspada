@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import type { StreamStatus } from "@/hooks/use-alert-stream";
+import { NetworkGlobe } from "./network-globe";
 
 const rise = (delay: number) => ({
   initial: { opacity: 0, y: 24 },
@@ -9,26 +10,23 @@ const rise = (delay: number) => ({
   transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as const },
 });
 
-export function Hero({ status }: { status: StreamStatus }) {
+export function Hero({ status, pulseKey }: { status: StreamStatus; pulseKey: string | null }) {
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden px-4 pb-16 pt-14 md:pb-24 md:pt-20">
-      {/* satu glow sebagai titik fokus di belakang judul (disetujui pemilik, warna TNI-AD) */}
+      {/* satu glow sebagai titik fokus di belakang judul (disetujui pemilik), hijau perisai Pussiberad */}
       <div
         aria-hidden
-        className="absolute left-1/2 top-1/2 -z-10 h-[520px] w-[820px] max-w-[160vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(75,83,32,0.55),transparent_65%)] blur-2xl"
+        className="absolute left-1/2 top-1/2 -z-10 h-[520px] w-[820px] max-w-[160vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(63,122,64,0.45),transparent_65%)] blur-2xl"
       />
-      <div
+      <motion.div
         aria-hidden
-        className={`radar absolute left-1/2 top-1/2 -z-10 aspect-square w-[min(720px,140vw)] -translate-x-1/2 -translate-y-1/2 ${
-          status === "live" ? "is-live" : ""
-        }`}
+        className="absolute left-1/2 top-1/2 -z-10 aspect-square w-[min(720px,140vw)] -translate-x-1/2 -translate-y-1/2 opacity-80"
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 0.8, scale: 1 }}
+        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="absolute inset-0 rounded-full border border-army/40" />
-        <div className="absolute inset-[18%] rounded-full border border-army/30" />
-        <div className="absolute inset-[36%] rounded-full border border-dashed border-army/30" />
-        <div className="radar-ping absolute inset-[18%] rounded-full border border-gold/40 opacity-0" />
-        <div className="radar-sweep absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,rgba(212,167,44,0.18),transparent_18%)]" />
-      </div>
+        <NetworkGlobe live={status === "live"} pulseKey={pulseKey} />
+      </motion.div>
 
       <div className="mx-auto max-w-6xl text-center">
         <h1 id="hero-title" className="font-display text-5xl font-bold leading-[0.95] sm:text-6xl md:text-8xl">

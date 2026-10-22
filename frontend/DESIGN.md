@@ -9,25 +9,26 @@ Dial: ENERGY 2 / RHYTHM 2 / MOTION 2
 Mengikuti pola template "Cybersecurity Services" (aura.build): nav sticky, hero besar dengan judul dua warna, lalu panel dashboard berbingkai jendela. Bedanya, panel di WASPADA adalah dashboard live yang asli, bukan mockup, dan tidak ada statistik karangan.
 
 Pengecualian antislop yang disetujui pemilik (21 Okt 2026):
-- Glow radial di belakang judul hero: dipertahankan, satu saja, warna hijau TNI-AD (bukan merah template, supaya merah tetap khusus alert kritis).
-- Radar beranimasi di hero: dipertahankan; hanya berputar saat stream SSE terhubung, jadi gerakannya menandai status nyata. Mati saat *reduce motion*.
+- Glow radial di belakang judul hero: dipertahankan, satu saja, hijau perisai Pussiberad (bukan merah template, supaya merah tetap khusus alert kritis).
+- Animasi berulang di hero: radar diganti **jaring pertahanan** (lihat Gerak); paket hanya bergerak saat stream SSE terhubung, jadi gerakannya menandai status nyata. Mati saat *reduce motion*.
 - Bingkai jendela tiga titik di atas panel pemantauan: dipertahankan sebagai identitas visual template.
 - Label kecil huruf kapital berjarak renggang: dipertahankan untuk label statistik dan status panel.
 
 ## Warna (token di `app/globals.css`)
 
-Diambil dari identitas TNI Angkatan Darat: hijau loreng sebagai dasar, emas lambang Kartika Eka Paksi sebagai satu-satunya aksen.
+Diambil dari lambang Pussiberad (Pusat Siber TNI AD), diukur dari lambang pada poster HUT ke-6 Pussiberad: perisai hijau (`#488547`, sorotan `#60B45F`), bingkai/bintang/pita emas (`#D6AF58`), bola dunia merah-putih (`#CA373B` / putih). Merah dipertahankan sebagai warna severity kritis saja.
 
 | Token | Nilai | Dipakai untuk |
 |---|---|---|
-| `bg` | `#0B0D08` | Latar halaman, hijau-hitam, bukan hitam pekat |
-| `surface` | `#13170E` | Panel dan kartu |
-| `surface-2` | `#1C2215` | Kartu terpilih, hover |
-| `line` | `#2A3120` | Garis pemisah |
-| `army` | `#4B5320` | Hijau TNI-AD: state aktif (filter terpilih) |
-| `ink` | `#ECEAE0` | Teks utama |
-| `ink-muted` | `#A6AC92` | Teks sekunder (kontras 7:1 di atas `bg`) |
-| `gold` | `#D4A72C` | Aksen: baris kedua judul hero, tombol utama, focus ring, titik media luar negeri di timeline |
+| `bg` | `#070D08` | Latar halaman, hijau-hitam, bukan hitam pekat |
+| `surface` | `#0D170F` | Panel dan kartu |
+| `surface-2` | `#142217` | Kartu terpilih, hover |
+| `line` | `#213426` | Garis pemisah, rel alur korelasi |
+| `siber` | `#3F7A40` | Hijau perisai (digelapkan agar teks putih di atasnya kontras): state aktif, filter terpilih |
+| `siber-bright` | `#60B45F` | Sorotan perisai: status terhubung, simpul jaring |
+| `ink` | `#F1F4EF` | Teks utama |
+| `ink-muted` | `#A7B8A6` | Teks sekunder |
+| `gold` | `#D6AF58` | Aksen emas: baris kedua judul hero, tombol utama, focus ring, paket data, titik media luar negeri |
 
 Severity selalu ditulis dengan label teks, bukan hanya warna:
 
@@ -55,7 +56,7 @@ Contoh: "Sambungan ke server pemantauan terputus. Sistem akan menyambung ulang s
 
 ## Gerak
 
-Gerak hanya menandai kejadian, tidak berjalan terus-menerus. Semua dimatikan bila pengguna memilih *reduce motion*.
+Gerak hanya menandai kejadian atau status nyata. Satu-satunya gerak berulang adalah paket di jaring hero, dan itu hanya berjalan saat stream terhubung. Semua dimatikan bila pengguna memilih *reduce motion*.
 
 | Kejadian | Gerak |
 |---|---|
@@ -63,6 +64,10 @@ Gerak hanya menandai kejadian, tidak berjalan terus-menerus. Semua dimatikan bil
 | Alert kritis baru | Cincin merah berdenyut 2x, toast muncul 8 detik |
 | Buka detail | Panel naik + timeline muncul berurutan |
 | Ganti filter | Indikator pilihan bergeser ke tombol aktif |
+| Stream terhubung | **Jaring pertahanan** di hero (bola dunia berjaring, motif lambang Pussiberad): paket emas bergerak dari simpul ke inti korelasi. Saat terputus, paket berhenti dan simpul meredup |
+| Alert baru dari stream | Inti jaring memancarkan satu gelombang merah |
+| Event / alert baru dari stream | **Alur korelasi** (Ingest → Normalisasi → Korelasi → Peringatan): paket emas per event menuju Korelasi, paket merah per alert menuju Peringatan. Tanpa data baru, alur diam |
+| Panel pemantauan masuk layar | Naik halus sekali (scroll reveal) |
 
 ## Tata letak
 

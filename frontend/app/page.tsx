@@ -1,6 +1,6 @@
 "use client";
 
-import { MotionConfig } from "motion/react";
+import { motion, MotionConfig } from "motion/react";
 import { useCallback, useState } from "react";
 import { AlertDetail } from "@/components/alert-detail";
 import { AlertList } from "@/components/alert-list";
@@ -8,6 +8,7 @@ import { ConnectionStatus } from "@/components/connection-status";
 import { CriticalToast } from "@/components/critical-toast";
 import { Hero } from "@/components/hero";
 import { NewsFeed } from "@/components/news-feed";
+import { PipelineFlow } from "@/components/pipeline-flow";
 import { StatsBar } from "@/components/stats-bar";
 import { useAlertStream } from "@/hooks/use-alert-stream";
 import { API } from "@/lib/api";
@@ -17,9 +18,11 @@ export default function Dashboard() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<Alert | null>(null);
   const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
+  const [pulseKey, setPulseKey] = useState<string | null>(null); // alert terbaru dari stream -> denyut inti jaring
 
   const { alerts, events, status, loaded } = useAlertStream((a) => {
     setFreshIds((prev) => new Set(prev).add(a.id));
+    setPulseKey(a.id);
     if (a.severity === "critical") setToast(a);
   });
 
@@ -58,14 +61,23 @@ export default function Dashboard() {
           </div>
         </nav>
 
-        <Hero status={status} />
+        <Hero status={status} pulseKey={pulseKey} />
+
+        <PipelineFlow events={events} alerts={alerts} loaded={loaded} />
 
         <section
           id="pemantauan"
           aria-label="Pemantauan langsung"
           className="mx-auto mb-16 max-w-[1400px] px-4 md:px-6"
         >
-          <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]">
+          {/* muncul sekali saat digulir ke layar: mengarahkan mata dari alur korelasi ke panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
+          >
             {/* bingkai jendela gaya template (disetujui pemilik); status di kanan mencerminkan koneksi SSE nyata */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 md:px-5">
               <div className="flex items-center gap-4">
@@ -80,7 +92,7 @@ export default function Dashboard() {
               </div>
               <span
                 className={`font-data rounded-md border px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] ${
-                  live ? "border-army bg-army/30 text-ink" : "border-sev-critical/50 bg-sev-critical/10 text-sev-critical"
+                  live ? "border-siber bg-siber/30 text-ink" : "border-sev-critical/50 bg-sev-critical/10 text-sev-critical"
                 }`}
               >
                 {live ? "Pemantauan aktif" : "Pemantauan terputus"}
@@ -103,7 +115,7 @@ export default function Dashboard() {
                 <NewsFeed events={events} loaded={loaded} />
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         <footer className="font-data border-t border-line px-4 py-6 text-center text-xs text-ink-muted">
