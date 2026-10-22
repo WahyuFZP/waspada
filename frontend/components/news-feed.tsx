@@ -36,7 +36,9 @@ export function NewsFeed({ events, loaded }: { events: Event[]; loaded: boolean 
             : "Belum ada berita dari media dengan asal ini."}
         </p>
       )}
-      <ul className="flex flex-col gap-2 xl:max-h-[calc(100dvh-16rem)] xl:overflow-y-auto xl:pr-1">
+      {/* relative: elemen absolute di dalam (teks sr-only) harus terpotong kotak scroll ini; tanpa ini mereka
+          lepas ke tingkat halaman dan membuat halaman bisa digulir jauh melewati footer */}
+      <ul className="relative flex flex-col gap-2 xl:max-h-[calc(100dvh-16rem)] xl:overflow-y-auto xl:pr-1">
         <AnimatePresence initial={false}>
           {shown.map((e, i) => (
             <motion.li
