@@ -12,7 +12,7 @@ export function ApkHeader() {
             Pemeriksa APK
           </Link>
         </div>
-        <Link href="/" className="font-data text-xs text-ink-muted hover:text-ink">
+        <Link href="/pemantauan" className="font-data text-xs text-ink-muted hover:text-ink">
           Kembali ke pemantauan
         </Link>
       </div>
