@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, MotionConfig } from "motion/react";
+import Link from "next/link";
 import { useCallback, useState } from "react";
 import { AlertDetail } from "@/components/alert-detail";
 import { AlertList } from "@/components/alert-list";
@@ -54,6 +55,11 @@ export default function Dashboard() {
                   <a href="#arus-berita" className="hover:text-ink">
                     Arus kejadian
                   </a>
+                </li>
+                <li>
+                  <Link href="/apk" className="hover:text-ink">
+                    Pemeriksa APK
+                  </Link>
                 </li>
               </ul>
             </div>
