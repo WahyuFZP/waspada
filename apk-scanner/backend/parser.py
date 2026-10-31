@@ -57,6 +57,19 @@ def _raw_texts(path):
                 yield data.decode("latin-1") + "\n" + data.decode("utf-16-le", "ignore")
 
 
+def _signer(a):
+    """Identitas penandatangan. APK palsu hasil modifikasi ulang memuat kode asli, tetapi kuncinya pasti berbeda."""
+    cert = (a.get_certificates() or [None])[0]
+    subject = cert.subject.human_friendly if cert else None
+    return {
+        "skema": [s for s, ok in (("v1", a.is_signed_v1()), ("v2", a.is_signed_v2()), ("v3", a.is_signed_v3())) if ok],
+        "subjek": subject,
+        "sha256": cert.sha256_fingerprint.replace(" ", "").lower() if cert else None,
+        "berlaku_hingga": cert["tbs_certificate"]["validity"]["not_after"].native.date().isoformat() if cert else None,
+        "debug": bool(subject) and "Android Debug" in subject,  # kunci bawaan Android Studio, bukan kunci rilis
+    }
+
+
 def parse(path):
     """Path APK yang sudah lolos validator -> dict hasil ekstraksi."""
     a = APK(path)
@@ -67,13 +80,13 @@ def parse(path):
     full = lambda n: n if not n or ("." in n and not n.startswith(".")) else f"{package}{n if n.startswith('.') else '.' + n}"
     galat = []
 
-    def stage(nama, fn):
+    def stage(nama, fn, kosong=list):
         """Seperti MobSF: tahap yang gagal dicatat di laporan, tahap lain tetap berjalan."""
         try:
             return fn()
         except Exception as exc:
             galat.append(f"{nama}: {type(exc).__name__}: {exc}")
-            return []
+            return kosong()
 
     components = stage("Komponen manifest", lambda: [
         {
@@ -91,15 +104,21 @@ def parse(path):
     hosts = {}
     for u in {u.rstrip(".,;)'\"") for t in texts for u in URL_RE.findall(t)}:
         try:
-            hosts[u] = urlsplit(u).hostname or ""
+            host = urlsplit(u).hostname or ""
         except ValueError:  # string mirip URL yang rusak, mis. "http://[%s" dari template format; bukan URL nyata
-            pass
+            continue
+        if "." in host:  # "https://appx" atau "https://www" adalah potongan string, bukan alamat yang bisa dihubungi
+            hosts[u] = host
     urls = sorted(hosts)
-    # IP hanya dari host URL atau string DEX yang isinya persis IP(:port); "1.2.0.0" di tengah teks sering nomor versi
-    candidates = list(hosts.values()) + [s.split(":")[0] for s in strings if IP_ONLY_RE.fullmatch(s)]
+    # IP hanya dari host URL atau string DEX yang isinya persis IP(:port); "1.2.0.0" di tengah teks sering nomor versi.
+    # shortcut: IP tanpa port dengan oktet pertama < 10 ("1.5.1.3", "3.1.8.100") dianggap nomor versi; blok publik
+    # 1.x-9.x (mis. AWS 3.x) ikut terlewat, perbaiki bila ada daftar IP pelaku nyata di rentang itu.
+    candidates = list(hosts.values()) + [s.split(":")[0] for s in strings
+                                         if IP_ONLY_RE.fullmatch(s) and (":" in s or int(s.split(".")[0]) >= 10)]
     ips = sorted({ip for ip in candidates if IPV4_RE.fullmatch(ip) and all(int(p) <= 255 for p in ip.split("."))})
 
     permissions = sorted(set(a.get_permissions()))
+    signer = stage("Sertifikat", lambda: _signer(a), kosong=dict)
 
     return {
         "sha256": sha256_file(path),
@@ -114,5 +133,6 @@ def parse(path):
         "texts": texts,  # untuk rule; tidak ikut ke laporan
         "urls": urls,
         "ips": ips,
+        "sertifikat": signer,
         "galat": galat,
     }

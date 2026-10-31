@@ -7,7 +7,7 @@ WIB = timezone(timedelta(hours=7))
 CATATAN = "Hasil ini adalah indikasi static-analysis untuk ditinjau manusia, bukan vonis malware final."
 
 
-def build(filename, size, parsed, packer, findings, skor, level):
+def build(filename, size, parsed, packer, findings, skor, level, akhir):
     return {
         "schema_version": "1.1",
         "scan_id": str(uuid.uuid4()),
@@ -20,6 +20,7 @@ def build(filename, size, parsed, packer, findings, skor, level):
         "temuan": [asdict(f) for f in findings],
         "skor": skor,
         "level_risiko": level,
+        "analisa_akhir": akhir,
         "tahap_gagal": parsed["galat"],  # bagian yang tidak terperiksa; skor bisa lebih rendah dari seharusnya
         "catatan": CATATAN,
     }

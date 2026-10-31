@@ -33,6 +33,8 @@ services:
     build: ./apk-scanner/backend
     environment:
       DATA_DIR: /data
+      # opsional: cek hash APK ke MalwareBazaar (kunci gratis di auth.abuse.ch); kosong = langkah ini dilewati
+      ABUSECH_AUTH_KEY: ${ABUSECH_AUTH_KEY:-}
     ports: ["8001:8000"]
     volumes:
       - ./apk-scanner/backend:/app  # kode live untuk pengembangan

@@ -12,6 +12,18 @@ export type Finding = {
   penjelasan: string;
 };
 
+export type Verdict = "Berbahaya" | "Mencurigakan" | "Tidak ditemukan indikasi berbahaya";
+
+export type FinalAnalysis = {
+  status: Verdict;
+  alasan: string[];
+  saran: string[];
+  intel: { status: "dikenal_malware" | "tidak_ditemukan" | "dilewati" | "galat"; keterangan: string };
+  // kosong bila sertifikat tidak terbaca
+  sertifikat: { skema?: string[]; subjek?: string | null; sha256?: string | null; berlaku_hingga?: string | null; debug?: boolean };
+  domain: { domain: string; jumlah: number; kategori: "aplikasi" | "dikenal" | "lainnya" }[];
+};
+
 export type ScanResult = {
   schema_version: string;
   scan_id: string;
@@ -24,6 +36,7 @@ export type ScanResult = {
   temuan: Finding[];
   skor: number;
   level_risiko: Level;
+  analisa_akhir?: FinalAnalysis; // tidak ada di laporan lama
   tahap_gagal?: string[]; // tidak ada di laporan lama
   catatan: string;
 };

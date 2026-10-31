@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApkHeader } from "@/components/apk-header";
+import { FinalAnalysisCard } from "@/components/final-analysis";
 import { formatTime } from "@/lib/api";
 import { getScan, kb, LEVEL_STYLE, type ScanResult } from "@/lib/apk";
 
@@ -80,6 +81,8 @@ export default function ApkResultPage() {
                 <p className="font-data text-xs">dari 100</p>
               </div>
             </motion.section>
+
+            {r.analisa_akhir && <FinalAnalysisCard a={r.analisa_akhir} />}
 
             {!!r.tahap_gagal?.length && (
               <div role="alert" className="rounded-lg border border-sev-high/50 bg-sev-high/10 p-4 text-sm">

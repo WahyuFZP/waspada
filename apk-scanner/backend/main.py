@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 
+import final
 import packer
 import parser as apk_parser
 import report
@@ -32,7 +33,8 @@ def analyze(path, filename, size):
     pk = packer.scan(path)
     findings = rules.evaluate(parsed, pk)
     skor, level = scoring.score(findings)
-    return report.build(filename, size, parsed, pk, findings, skor, level)
+    akhir = final.conclude(parsed, pk, findings, level)
+    return report.build(filename, size, parsed, pk, findings, skor, level, akhir)
 
 
 @app.post("/scan")
