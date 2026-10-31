@@ -27,5 +27,18 @@ services:
     depends_on:
       db: {condition: service_healthy}
 
+  # Pemeriksa APK: service terpisah dengan SQLite sendiri. APK dari luar dibaca di dalam container ini,
+  # jadi bila ada celah di parser, dampaknya terkurung di sini.
+  apk-scanner:
+    build: ./apk-scanner/backend
+    environment:
+      DATA_DIR: /data
+    ports: ["8001:8000"]
+    volumes:
+      - ./apk-scanner/backend:/app  # kode live untuk pengembangan
+      - apkdata:/data               # APK karantina, laporan JSON, scans.db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
 volumes:
   pgdata:
+  apkdata:

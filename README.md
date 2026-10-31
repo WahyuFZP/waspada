@@ -106,3 +106,7 @@ npm run dev
 Buka http://localhost:3000. URL backend bisa diganti lewat `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
 
 Test (memakai database terpisah `waspada_test`): `docker compose exec backend pytest -q -p no:cacheprovider`
+
+## Pemeriksa APK
+
+Modul analisis statis APK (deteksi pencuri OTP / banking trojan) ada di [`apk-scanner/`](apk-scanner/README.md): service `apk-scanner` (port 8001) dan halaman dashboard `/apk`.
