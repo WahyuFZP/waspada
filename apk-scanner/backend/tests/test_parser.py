@@ -30,3 +30,25 @@ def test_apkid_compiler_marker_is_not_a_packer(benign_apk):
     pk = packer.scan(benign_apk("com.politedroid_4.apk"))
     assert pk["terdeteksi"] is False and "galat" not in pk
     assert "r8 without marker (suspicious)" in pk["info_lain"]["compiler"]
+
+
+def test_malformed_url_string_is_skipped(benign_apk, monkeypatch):
+    # "http://[" membuat urlsplit melempar ValueError (Invalid IPv6 URL); dulu menggagalkan seluruh analisis
+    import parser as parser_mod
+    monkeypatch.setattr(parser_mod, "_raw_texts", lambda _: ["http://[%s:8080/x", "https://ok.example.org/a"])
+    p = parse(benign_apk("com.politedroid_4.apk"))
+    assert "https://ok.example.org/a" in p["urls"]
+    assert not any("[" in u for u in p["urls"])
+
+
+def test_failed_stage_is_reported_not_fatal(benign_apk, monkeypatch):
+    import parser as parser_mod
+
+    def boom(_):
+        raise OSError("arsip rusak")
+        yield
+
+    monkeypatch.setattr(parser_mod, "_raw_texts", boom)
+    p = parse(benign_apk("com.politedroid_4.apk"))
+    assert p["package"] == "com.politedroid"  # manifest tetap terbaca
+    assert p["galat"] == ["Resource & assets: OSError: arsip rusak"]

@@ -24,6 +24,7 @@ export type ScanResult = {
   temuan: Finding[];
   skor: number;
   level_risiko: Level;
+  tahap_gagal?: string[]; // tidak ada di laporan lama
   catatan: string;
 };
 

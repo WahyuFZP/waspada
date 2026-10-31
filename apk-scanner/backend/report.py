@@ -20,5 +20,6 @@ def build(filename, size, parsed, packer, findings, skor, level):
         "temuan": [asdict(f) for f in findings],
         "skor": skor,
         "level_risiko": level,
+        "tahap_gagal": parsed["galat"],  # bagian yang tidak terperiksa; skor bisa lebih rendah dari seharusnya
         "catatan": CATATAN,
     }

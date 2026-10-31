@@ -81,6 +81,22 @@ export default function ApkResultPage() {
               </div>
             </motion.section>
 
+            {!!r.tahap_gagal?.length && (
+              <div role="alert" className="rounded-lg border border-sev-high/50 bg-sev-high/10 p-4 text-sm">
+                <p className="font-semibold text-sev-high">Analisis tidak lengkap</p>
+                <p className="mt-1 text-ink">
+                  Bagian berikut tidak dapat diperiksa, sehingga skor bisa lebih rendah dari risiko sebenarnya:
+                </p>
+                <ul className="font-data mt-2 list-disc pl-5 text-xs text-ink-muted">
+                  {r.tahap_gagal.map((g) => (
+                    <li key={g} className="break-all">
+                      {g}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <section aria-labelledby="temuan-title" className="flex flex-col gap-3">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <h2 id="temuan-title" className="font-display text-3xl font-bold">
