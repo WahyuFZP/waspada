@@ -18,7 +18,6 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
-      "shaders/**", // sumber ThreeUI yang disalin apa adanya (SHA-256 terverifikasi), jangan diubah lint
     ],
   },
 ];
