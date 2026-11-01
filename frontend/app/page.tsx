@@ -4,6 +4,7 @@ import { animate, createScope, scrambleText, stagger } from "animejs";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { LogoMark } from "@/components/logo-mark";
 import { NetworkScan } from "@/components/network-scan";
 
 const rise = (delay: number) => ({
@@ -80,7 +81,8 @@ export default function Boot() {
               </span>
               Pusat Siber · sistem aktif
             </p>
-            <h1 className="title font-display mt-4 text-6xl font-bold leading-none md:text-8xl">WASPADA</h1>
+            <LogoMark className="mt-4 h-16 w-16" />
+            <h1 className="title font-display mt-3 text-6xl font-bold leading-none md:text-8xl">WASPADA</h1>
             <p className="mt-4 max-w-xl text-ink-muted md:text-lg">
               Teman jaga keamanan digital satuan. Kami pantau kabar ancaman dan bantu memeriksa aplikasi mencurigakan,
               supaya Anda bisa bertindak <span className="text-gold">sebelum</span> terlambat.
