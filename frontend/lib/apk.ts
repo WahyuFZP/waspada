@@ -1,4 +1,4 @@
-// Kontrak dengan apk-scanner/backend (schema laporan PRD v1.1 §9).
+// Kontrak dengan apk-scanner/backend (schema laporan PRD v1.2 §9).
 export const APK_API = process.env.NEXT_PUBLIC_APK_API_URL ?? "http://localhost:8001";
 
 export type Level = "Rendah" | "Sedang" | "Tinggi";

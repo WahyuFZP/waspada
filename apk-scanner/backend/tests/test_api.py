@@ -18,7 +18,7 @@ def test_scan_flow_on_real_apk(benign_apk):
     rep = r.json()
     assert rep["file"]["nama"] == "undangan nikah.apk"  # path dari klien dibuang
     assert rep["aplikasi"]["package"] == "com.politedroid" and rep["level_risiko"] == "Rendah"
-    assert rep["schema_version"] == "1.1" and rep["catatan"].startswith("Hasil ini adalah indikasi")
+    assert rep["schema_version"] == "1.2" and rep["catatan"].startswith("Hasil ini adalah indikasi")
     assert os.path.exists(os.path.join(os.environ["DATA_DIR"], "apk", rep["file"]["sha256"] + ".apk"))
 
     assert client.get("/scans").json()[0]["scan_id"] == rep["scan_id"]
