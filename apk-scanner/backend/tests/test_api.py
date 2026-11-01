@@ -29,3 +29,12 @@ def test_scan_flow_on_real_apk(benign_apk):
 def test_rejects_non_apk():
     r = client.post("/scan", files={"file": ("a.apk", b"bukan apk", "application/octet-stream")})
     assert r.status_code == 422 and "bukan file APK" in r.json()["detail"]
+
+
+def test_slow_analysis_times_out(benign_apk, monkeypatch):
+    import time
+    monkeypatch.setattr(main, "ANALYZE_TIMEOUT", 0.2)
+    monkeypatch.setattr(main, "analyze", lambda *_: time.sleep(1))
+    with open(benign_apk("com.politedroid_4.apk"), "rb") as fh:
+        r = client.post("/scan", files={"file": ("a.apk", fh, "application/vnd.android.package-archive")})
+    assert r.status_code == 504 and "melebihi" in r.json()["detail"]

@@ -1,4 +1,5 @@
 """API APK Security Scanner: POST /scan, GET /scans, GET /scans/{id}. APK hanya dibaca, tidak pernah dijalankan."""
+import asyncio
 import json
 import os
 import tempfile
@@ -18,6 +19,8 @@ from db import Db
 from validator import MAX_BYTES, InvalidApk, validate
 
 DATA = Path(os.environ.get("DATA_DIR", "data"))
+# APK uji nyata selesai < 5 detik; batas ini hanya untuk APK rekayasa yang membuat parser berputar tanpa henti
+ANALYZE_TIMEOUT = 120
 (DATA / "apk").mkdir(parents=True, exist_ok=True)
 (DATA / "reports").mkdir(parents=True, exist_ok=True)
 db = Db(str(DATA / "scans.db"))
@@ -62,7 +65,11 @@ async def scan(file: UploadFile):
     path = DATA / "apk" / f"{sha}.apk"  # karantina dengan nama hash, bukan nama asli dari klien
     os.replace(tmp.name, path)
     try:
-        result = await run_in_threadpool(analyze, str(path), filename, size)
+        # shortcut: thread yang melewati batas waktu tidak bisa dihentikan paksa, hanya dibatasi mem/cpu container;
+        # pindahkan analisis ke proses terpisah bila scanner dibuka untuk pengguna di luar laptop ini
+        result = await asyncio.wait_for(run_in_threadpool(analyze, str(path), filename, size), ANALYZE_TIMEOUT)
+    except TimeoutError:
+        raise HTTPException(504, f"Analisis melebihi {ANALYZE_TIMEOUT} detik dan dihentikan. APK ini mungkin sengaja dibuat untuk mengganggu pemeriksa.")
     except Exception as exc:  # APK lolos validasi tapi tidak bisa diurai androguard
         raise HTTPException(422, f"APK tidak dapat dianalisis: {type(exc).__name__}: {exc}")
     db.save(result)
