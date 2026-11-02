@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: waspada  # kredensial demo lokal saja, jangan dipakai di server publik
       POSTGRES_DB: waspada
     # 127.0.0.1: hanya laptop ini yang bisa terhubung, bukan seluruh Wi-Fi (penting di lokasi acara)
-    ports: ["127.0.0.1:5432:5432"]
+    ports: ["127.0.0.1:5433:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

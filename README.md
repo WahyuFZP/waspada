@@ -80,7 +80,7 @@ Berita memakai `region` dan `topic` sebagai pengganti `host`/`src_ip`.
 | Node.js | 20 LTS atau lebih baru | Hanya untuk dashboard Next.js |
 
 Python **tidak perlu** dipasang: semua kode Python berjalan di dalam container (Python 3.11).
-Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner APK), `5432` (PostgreSQL).
+Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner APK), `5433` (PostgreSQL).
 
 ### Langkah
 
@@ -127,7 +127,7 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
 | http://localhost:3000 | Dashboard (landing, `/pemantauan`, `/apk`) |
 | http://localhost:8000/docs | API backend SIEM |
 | http://localhost:8001/docs | API scanner APK |
-| `localhost:5432` | PostgreSQL (user/password/db: `waspada`, hanya untuk demo lokal) |
+| `localhost:5433` | PostgreSQL (user/password/db: `waspada`, hanya untuk demo lokal) |
 
 Semua port hanya bisa diakses dari komputer itu sendiri (`127.0.0.1`), bukan dari perangkat lain di Wi-Fi yang sama. Ini disengaja.
 

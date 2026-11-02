@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 # DB terpisah (dibuat oleh db/init.sql) supaya test tidak menghapus data demo
-os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada_test")
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", "postgresql://waspada:waspada@localhost:5433/waspada_test")
 os.environ.pop("DISCORD_WEBHOOK_URL", None)
 
 from fastapi.testclient import TestClient  # noqa: E402
