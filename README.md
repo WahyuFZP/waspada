@@ -1,5 +1,8 @@
 # WASPADA: Threat-Informed SIEM
 
+**W**ide-**A**rea **S**ignal **P**rocessing for **A**lerting and **D**omain **A**wareness: pengolahan sinyal area luas
+untuk peringatan dan kesadaran domain siber. Dua modul: Pemantauan SIEM (di bawah) dan [Pemeriksa APK](#pemeriksa-apk).
+
 SIEM ringan yang mengorelasikan **log keamanan internal**, **intelijen ancaman terbuka (CISA KEV)**, dan **OSINT berita** dalam satu pipeline: **ingest → normalisasi → korelasi → alert**.
 Satu kejadian tampak biasa; rangkaiannya lintas sumber adalah ancaman.
 
