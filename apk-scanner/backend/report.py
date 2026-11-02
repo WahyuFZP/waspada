@@ -1,4 +1,4 @@
-"""Susun laporan JSON sesuai schema PRD v1.1 §9."""
+"""Susun laporan JSON sesuai schema PRD v1.2 §9."""
 import uuid
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
@@ -7,9 +7,9 @@ WIB = timezone(timedelta(hours=7))
 CATATAN = "Hasil ini adalah indikasi static-analysis untuk ditinjau manusia, bukan vonis malware final."
 
 
-def build(filename, size, parsed, packer, findings, skor, level):
+def build(filename, size, parsed, packer, findings, skor, level, akhir):
     return {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "scan_id": str(uuid.uuid4()),
         "scanned_at": datetime.now(WIB).isoformat(timespec="seconds"),
         "file": {"nama": filename, "ukuran_bytes": size, "sha256": parsed["sha256"]},
@@ -20,5 +20,7 @@ def build(filename, size, parsed, packer, findings, skor, level):
         "temuan": [asdict(f) for f in findings],
         "skor": skor,
         "level_risiko": level,
+        "analisa_akhir": akhir,
+        "tahap_gagal": parsed["galat"],  # bagian yang tidak terperiksa; skor bisa lebih rendah dari seharusnya
         "catatan": CATATAN,
     }

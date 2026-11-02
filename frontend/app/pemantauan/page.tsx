@@ -8,6 +8,7 @@ import { AlertList } from "@/components/alert-list";
 import { ConnectionStatus } from "@/components/connection-status";
 import { CriticalToast } from "@/components/critical-toast";
 import { Hero } from "@/components/hero";
+import { LogoMark } from "@/components/logo-mark";
 import { NewsFeed } from "@/components/news-feed";
 import { PipelineFlow } from "@/components/pipeline-flow";
 import { StatsBar } from "@/components/stats-bar";
@@ -42,7 +43,8 @@ export default function Dashboard() {
         <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
             <div className="flex items-center gap-8">
-              <Link href="/" className="font-display text-2xl font-bold leading-none">
+              <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold leading-none">
+                <LogoMark className="h-7 w-7" />
                 WASPADA
               </Link>
               <ul className="font-data hidden gap-6 text-xs text-ink-muted sm:flex">

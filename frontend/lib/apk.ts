@@ -1,4 +1,4 @@
-// Kontrak dengan apk-scanner/backend (schema laporan PRD v1.1 §9).
+// Kontrak dengan apk-scanner/backend (schema laporan PRD v1.2 §9).
 export const APK_API = process.env.NEXT_PUBLIC_APK_API_URL ?? "http://localhost:8001";
 
 export type Level = "Rendah" | "Sedang" | "Tinggi";
@@ -10,6 +10,18 @@ export type Finding = {
   bobot: number;
   bukti: string[];
   penjelasan: string;
+};
+
+export type Verdict = "Berbahaya" | "Mencurigakan" | "Tidak ditemukan indikasi berbahaya";
+
+export type FinalAnalysis = {
+  status: Verdict;
+  alasan: string[];
+  saran: string[];
+  intel: { status: "dikenal_malware" | "tidak_ditemukan" | "dilewati" | "galat"; keterangan: string };
+  // kosong bila sertifikat tidak terbaca
+  sertifikat: { skema?: string[]; subjek?: string | null; sha256?: string | null; berlaku_hingga?: string | null; debug?: boolean };
+  domain: { domain: string; jumlah: number; kategori: "aplikasi" | "dikenal" | "lainnya" }[];
 };
 
 export type ScanResult = {
@@ -24,6 +36,8 @@ export type ScanResult = {
   temuan: Finding[];
   skor: number;
   level_risiko: Level;
+  analisa_akhir?: FinalAnalysis; // tidak ada di laporan lama
+  tahap_gagal?: string[]; // tidak ada di laporan lama
   catatan: string;
 };
 
