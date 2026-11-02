@@ -84,12 +84,11 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
 
 ### Langkah
 
-1. Clone repo dan masuk ke branch kerja (selama belum di-merge ke `main`):
+1. Clone repo:
 
    ```bash
    git clone https://github.com/WahyuFZP/waspada.git
    cd waspada
-   git checkout feature/crt-entry
    ```
 
 2. (Opsional) Buat file `.env` di root repo. File ini tidak ikut ke Git, dan semua isinya boleh dikosongkan:
