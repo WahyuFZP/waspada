@@ -14,6 +14,7 @@ Revisi dari v1.1 setelah uji APK dompet digital nyata: menambah Analisa Akhir, a
 | §8a | **Analisa Akhir** baru: status, alasan, dan saran berbahasa awam; domain dikelompokkan | Laporan teknis 300+ URL tidak bisa dibaca pengguna umum |
 | §9 | Schema `1.2`: field `analisa_akhir` dan `tahap_gagal` | Menampung §6 dan §8a |
 | §11 | Kartu Analisa Akhir dan peringatan "Analisis tidak lengkap" di Halaman Hasil | Menampilkan §8a dan isolasi galat |
+| §6, §7 | String library native dibaca; tautan pendek tanpa skema; rule R12 (judi online), R13 (rahasia tertanam), R14 (menghindari analisis) | Analisis `pgbet.apk` (2026-11-02, SHA-256 `84ebc263…c35f`): aplikasi Flutter judi online hanya mendapat skor 25 (Rendah) karena logikanya di `libapp.so`, konfigurasinya di `.env`, dan scanner tidak mengenal kategori judi. Setelah perubahan: 85 (Tinggi), *Berbahaya* |
 
 ## Perubahan dari v1 (di v1.1)
 
@@ -102,7 +103,7 @@ Backend berjalan di container: APK berasal dari luar dan tidak tepercaya, jadi b
    - `get_activities()`, `get_services()`, `get_receivers()`.
    - `get_intent_filters("service"|"receiver", nama)`: action per komponen.
    - `get_android_manifest_xml()`: atribut `android:permission` per `<service>`/`<receiver>` (namespace `{http://schemas.android.com/apk/res/android}`).
-4. **Ekstrak strings** (`androguard.core.dex.DEX(bytes).get_strings()` untuk setiap DEX dari `get_all_dex()`, plus teks `resources.arsc` dan `assets/`): URL (`https?://...`), IPv4, dan string penanda (lihat R10, R11).
+4. **Ekstrak strings** (`androguard.core.dex.DEX(bytes).get_strings()` untuk setiap DEX dari `get_all_dex()`, plus teks `resources.arsc` dan `assets/`, plus string ASCII ≥ 6 karakter dari library native `lib/*/*.so` ≤ 32 MB, karena Flutter menaruh logika aplikasi di `libapp.so`): URL (`https?://...`), tautan pendek tanpa skema (`bit.ly/…`, `*.short.gy/…`), IPv4, dan string penanda (lihat R10–R13). Host URL dibuang bila TLD-nya tidak masuk akal (> 24 huruf atau bukan huruf), mis. teks font yang menempel `southype.comnormaali…`.
    - URL dibuang bila tidak bisa diurai (`urlsplit` melempar `ValueError`, mis. `http://[%s`) atau host-nya tanpa titik (`https://appx`, `https://www`): itu potongan string, bukan alamat yang bisa dihubungi.
    - IP hanya diambil dari host URL, atau dari string DEX yang isinya persis IP(:port). IP tanpa port dengan oktet pertama < 10 (`1.5.1.3`, `3.1.8.100`) dianggap **nomor versi** dan dibuang. Batasan: IP publik sungguhan di blok 1.x–9.x tanpa port ikut terlewat.
 5. **Sertifikat** (`parser.py`): skema tanda tangan (v1/v2/v3), subjek, sidik jari SHA-256, dan masa berlaku sertifikat pertama dari `APK.get_certificates()`; tandai **kunci debug** bila subjek memuat `Android Debug`. Sertifikat hanya dibaca, tidak diverifikasi secara kriptografis.
@@ -131,6 +132,9 @@ Setiap rule menghasilkan `Finding` **hanya jika terpicu**, dengan bukti konkret 
 | R09 | IP/URL mencurigakan | IPv4 publik literal (bukan `127.*`, `10.*`, `172.16–31.*`, `192.168.*`, `0.*`) atau URL ke layanan shortlink (`bit.ly`, `s.id`, `tinyurl.com`, dst.), **setelah** mengecualikan domain umum (`schemas.android.com`, `android.com`, `google.com`, `googleapis.com`, `w3.org`, `apache.org`, dst.; daftar di konfigurasi) | 10 |
 | R10 | Kirim SMS diam-diam | permission `SEND_SMS` **dan** string `sendTextMessage` atau `sendMultipartTextMessage` di DEX | 20 |
 | R11 | Kirim data ke bot Telegram | string `api.telegram.org/bot` **atau** pola token bot `\d{8,10}:[A-Za-z0-9_-]{35}` di DEX/resources | 30 |
+| R12 | Judi online | ≥ 2 istilah taruhan berbeda (`casino`, `kasino`, `togel`, `lottery`, `sabung`, `poker`, `baccarat`, `roulette`, `jackpot`, `maxwin`, `gacor`, `sportsbook`, `slot online`, `turnover`) **dan** ≥ 1 istilah alur uang (`deposit`, `withdraw`, `tarik dana`, `setor`). Kosakata bank saja (deposit, bonus, bank) tidak memicu. Analisa Akhir selalu *Berbahaya* (§8a) | 30 |
+| R13 | Rahasia server tertanam | baris `KEY=VALUE` di teks APK dengan nama kunci memuat `SECRET`, `TOKEN`, `PASSWORD`, `API_KEY`, `PRIVATE_KEY`, `SALT`, atau `AUTH`, dan nilai ≥ 8 karakter selain `null`. Bukti = **nama kunci saja**; nilai tidak pernah ditampilkan atau dipakai | 10 |
+| R14 | Menghindari analisis | APKiD melaporkan kategori `anti_vm`, `anti_debug`, `anti_disassembly`, atau `manipulator`. Bobot rendah karena aplikasi bank sah kadang juga memakainya | 10 |
 
 Catatan:
 - R07 adalah inti deteksi banking trojan: satuan permission wajar, **kombinasinya** yang berbahaya.
@@ -155,7 +159,7 @@ Skor dan daftar temuan ditujukan untuk analis. Analisa Akhir menerjemahkannya me
 
 | Status | Pemicu |
 |---|---|
-| **Berbahaya** | hash dikenal sebagai malware di MalwareBazaar, **atau** level risiko Tinggi |
+| **Berbahaya** | hash dikenal sebagai malware di MalwareBazaar, **atau** level risiko Tinggi, **atau** R12 (judi online) terpicu. R12 juga menambah dua saran khusus di urutan teratas: larangan hukum dan pelaporan ke aduankonten.id |
 | **Mencurigakan** | level risiko Sedang, **atau** APK tidak ditandatangani, **atau** ditandatangani dengan kunci debug |
 | **Tidak ditemukan indikasi berbahaya** | tidak ada pemicu di atas |
 
@@ -268,12 +272,12 @@ Status per 2026-11-01:
 
 - [ ] `docker compose up` menjalankan backend + dashboard. *Sebagian: backend di Docker; dashboard masih dijalankan dengan `npm run dev` (belum ada service frontend di compose).*
 - [x] Upload APK via dashboard → dapat skor + temuan + JSON.
-- [x] Semua 11 rule (§7) jalan dan menghasilkan bukti.
+- [x] Semua 14 rule (§7) jalan dan menghasilkan bukti.
 - [x] Riwayat scan tersimpan di SQLite & bisa dibuka ulang.
 - [x] Laporan JSON sesuai schema §9 (`1.2`).
 - [x] Analisa Akhir (§8a) tampil di Halaman Hasil untuk setiap scan baru.
 - [x] Satu tahap yang gagal tidak menggagalkan scan dan tercatat di `tahap_gagal` (§6).
-- [ ] Semua unit test §12 lulus. *Sebagian: 32 test lulus, tetapi 2 fixture crafted-suspicious belum dibuat, sehingga alur unggah → status Berbahaya belum diuji dengan file APK nyata.*
+- [ ] Semua unit test §12 lulus. *Sebagian: 42 test lulus, tetapi 2 fixture crafted-suspicious belum dibuat, sehingga alur unggah → status Berbahaya belum ada di test otomatis (sudah diuji manual dengan `pgbet.apk`, 2026-11-02; APK itu sengaja tidak disimpan di repo).*
 - [x] README: cara menjalankan dengan Docker, atribusi lisensi pihak ketiga, dan cara mengaktifkan cek hash.
 
 ## 14. Risiko & Batasan

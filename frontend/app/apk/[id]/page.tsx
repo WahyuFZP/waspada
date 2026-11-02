@@ -16,7 +16,7 @@ const TINGKAT_STYLE = {
 } as const;
 
 const SUMMARY: Record<ScanResult["level_risiko"], string> = {
-  Tinggi: "Ditemukan beberapa ciri aplikasi pencuri OTP atau data perbankan. Jangan pasang aplikasi ini.",
+  Tinggi: "Ditemukan beberapa ciri aplikasi berbahaya. Jangan pasang aplikasi ini; alasannya ada di Analisa Akhir.",
   Sedang: "Ditemukan ciri yang perlu diwaspadai. Pasang hanya bila Anda yakin dengan sumbernya.",
   Rendah: "Tidak ditemukan indikator berbahaya yang kuat. Tetap pastikan sumber aplikasi tepercaya.",
 };
