@@ -22,6 +22,9 @@ KNOWN = {
     "hicloud.com", "huawei.com", "xiaomi.com", "xiaomi.net", "live.com", "microsoft.com", "yahoo.com", "paypal.com",
     "twilio.com", "zendesk.com", "apache.org", "w3.org", "mozilla.org", "material.io", "opentelemetry.io",
     "zetetic.net", "journeyapps.com", "kotlinlang.org", "jetbrains.com", "gradle.org", "schema.org", "example.com",
+    # dokumentasi framework & standar media yang ikut terbawa string library native (Flutter, ExoPlayer)
+    "flutter.dev", "dart.dev", "dartbug.com", "pub.dev", "googlesource.com", "unicode.org", "apple.com", "adobe.com",
+    "dashif.org", "aomedia.org", "g.co", "ibm.com",
 }
 SECOND_LEVEL = {"co", "ac", "go", "or", "web", "my", "sch", "com", "net", "org", "gov", "edu"}
 MB_API = "https://mb-api.abuse.ch/api/v1/"
@@ -70,6 +73,12 @@ def lookup_hash(sha256):
 
 
 RANK = ["Tidak ditemukan indikasi berbahaya", "Mencurigakan", "Berbahaya"]
+SARAN_JUDI = [
+    "Judi online dilarang hukum Indonesia (KUHP Pasal 303 dan UU ITE). Jangan mendaftar dan jangan memasukkan data "
+    "rekening atau dompet digital.",
+    "Laporkan aplikasi dan situsnya ke aduankonten.id. Bila Anda personel, laporkan juga ke atasan atau petugas siber "
+    "satuan.",
+]
 SARAN = {
     "Berbahaya": [
         "Jangan pasang aplikasi ini. Bila sudah terpasang, hapus dan putuskan internet ponsel.",
@@ -106,6 +115,9 @@ def conclude(parsed, packer, findings, level):
     elif level == "Sedang":
         naik("Mencurigakan")
     alasan += [f"{f.judul} ({f.rule_id})." for f in findings if f.tingkat == "tinggi"]
+    judi = any(f.rule_id == "R12" for f in findings)
+    if judi:  # ilegal dan merugikan personel walau tidak mencuri OTP, jadi tidak boleh berakhir "Rendah"
+        naik("Berbahaya")
 
     if not cert:
         alasan.append("Sertifikat penandatangan tidak dapat dibaca.")
@@ -128,5 +140,5 @@ def conclude(parsed, packer, findings, level):
     if intel["status"] == "tidak_ditemukan":
         alasan.append(intel["keterangan"])
 
-    return {"status": status, "alasan": alasan, "saran": SARAN[status], "intel": intel, "sertifikat": cert,
+    return {"status": status, "alasan": alasan, "saran": (SARAN_JUDI if judi else []) + SARAN[status], "intel": intel, "sertifikat": cert,
             "domain": domains}

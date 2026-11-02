@@ -1,6 +1,7 @@
-"""Rule engine MVP (PRD v1.1 §7). Setiap rule hanya menghasilkan Finding bila terpicu, lengkap dengan bukti."""
+"""Rule engine MVP (PRD v1.2 §7). Setiap rule hanya menghasilkan Finding bila terpicu, lengkap dengan bukti."""
 import ipaddress
 import re
+from collections import Counter
 from urllib.parse import urlsplit
 
 from models import Finding
@@ -17,7 +18,20 @@ EXCLUDED_DOMAINS = (
     "firebaseio.com", "firebase.com", "crashlytics.com", "facebook.com", "w3.org", "apache.org", "xml.org",
     "github.com", "gradle.org", "jetbrains.com", "kotlinlang.org", "mozilla.org", "example.com", "schema.org",
 )
-SHORTENERS = ("bit.ly", "s.id", "tinyurl.com", "t.co", "goo.gl", "is.gd", "cutt.ly", "shorturl.at", "rb.gy", "ow.ly")
+SHORTENERS = ("bit.ly", "s.id", "tinyurl.com", "t.co", "goo.gl", "is.gd", "cutt.ly", "shorturl.at", "rb.gy", "ow.ly",
+              "short.gy", "rebrand.ly")
+
+# R12: istilah khas taruhan. "bank", "deposit", "bonus" saja tidak cukup karena juga ada di aplikasi bank sah,
+# jadi butuh >= 2 istilah taruhan berbeda DAN alur uang (setor/tarik)
+GAMBLING_RE = re.compile(r"\b(casino|kasino|togel|lottery|lotre|sabung|poker|baccarat|roulette|jackpot|maxwin|gacor|"
+                         r"sportsbook|slot online|turnover)\b", re.I)
+MONEY_RE = re.compile(r"\b(deposit|withdraw|withdrawal|tarik dana|setor)\b", re.I)
+# R13: baris KEY=VALUE berisi rahasia di file konfigurasi yang ikut dibungkus (.env, *.properties); hanya nama kunci
+# yang dilaporkan, nilainya tidak pernah ditampilkan
+SECRET_LINE_RE = re.compile(r"(?m)^\s*([A-Z0-9_]*(?:SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE_KEY|SALT|AUTH)[A-Z0-9_]*)"
+                            r"\s*=\s*['\"]?(?!null\b)[^'\"\n]{8,}")
+# R14: kategori APKiD yang berarti aplikasi berusaha mendeteksi atau mengecoh alat analisis
+EVASION = ("anti_vm", "anti_debug", "anti_disassembly", "manipulator")
 
 
 def mask_token(text):
@@ -102,6 +116,27 @@ def evaluate(p, packer):
         hit("R11", "Mengirim data ke bot Telegram", "tinggi", 30, telegram,
             "Pola paling umum pencuri OTP di Indonesia: SMS dan data korban diteruskan ke bot Telegram milik pelaku. "
             "Token disamarkan di laporan dan tidak pernah dipakai untuk mengakses bot.")
+
+    bets = Counter(m.group(0).lower() for t in p["texts"] for m in GAMBLING_RE.finditer(t))
+    money = Counter(m.group(0).lower() for t in p["texts"] for m in MONEY_RE.finditer(t))
+    if len(bets) >= 2 and money:
+        hit("R12", "Aplikasi judi online", "tinggi", 30,
+            [f"{k} ×{n}" for k, n in bets.most_common()] + [f"{k} ×{n}" for k, n in money.most_common()],
+            "Memuat istilah taruhan (kasino, togel, sabung, dst.) sekaligus alur setor dan tarik dana. Judi online "
+            "dilarang hukum Indonesia, dan data rekening yang dimasukkan diserahkan ke operator ilegal.")
+
+    secrets = sorted({m.group(1) for t in p["texts"] for m in SECRET_LINE_RE.finditer(t)})
+    if secrets:
+        hit("R13", "Kunci rahasia server tertanam di aplikasi", "sedang", 10, secrets,
+            "Aplikasi membawa file konfigurasi berisi token atau kunci layanan. Aplikasi resmi tidak menyimpan rahasia "
+            "seperti ini di dalam APK. Yang dilaporkan hanya nama kuncinya; nilainya tidak ditampilkan dan tidak "
+            "pernah dipakai.")
+
+    evasive = [f"{k}: {v}" for k in EVASION for v in packer.get("info_lain", {}).get(k, [])]
+    if evasive:
+        hit("R14", "Berusaha menghindari pemeriksaan", "sedang", 10, evasive,
+            "Aplikasi memeriksa apakah sedang berjalan di emulator atau dianalisis, agar perilaku aslinya tersembunyi "
+            "dari peneliti. Aplikasi bank sah kadang juga melakukannya, jadi ini ciri pendukung, bukan bukti tunggal.")
 
     combo = [f.rule_id for f in found if f.rule_id in {"R01", "R02", "R03", "R04", "R10"}]
     if len(combo) >= 2:

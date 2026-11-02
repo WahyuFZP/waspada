@@ -80,3 +80,23 @@ def test_version_numbers_are_not_ips(benign_apk, monkeypatch):
 
     monkeypatch.setattr(parser_mod, "DEX", FakeDex)
     assert parse(benign_apk("com.politedroid_4.apk"))["ips"] == ["107.155.52.31", "3.1.8.100"]
+
+
+def test_native_library_strings_are_read(tmp_path):
+    import zipfile
+    import parser as parser_mod
+    so = tmp_path / "x.apk"
+    with zipfile.ZipFile(so, "w") as z:  # Flutter: URL hanya ada di libapp.so, tidak di DEX
+        z.writestr("lib/arm64-v8a/libapp.so", b"\x7fELF\x00\x01https://api.example.org/v1\x00\x02short")
+        z.writestr("assets/a.txt", b"bukan library")
+    [text] = parser_mod._native_texts(str(so))
+    assert "https://api.example.org/v1" in text and "bukan library" not in text
+
+
+def test_bare_short_links_and_glued_font_text(benign_apk, monkeypatch):
+    import parser as parser_mod
+    monkeypatch.setattr(parser_mod, "_raw_texts", lambda _: [
+        "BITLY_URL='bit.ly/48Y4K2L'\nX='4cqx.short.gy/85d30e'", "http://www.southype.comnormaalinormalestandaard"])
+    urls = parse(benign_apk("com.politedroid_4.apk"))["urls"]
+    assert "https://bit.ly/48Y4K2L" in urls and "https://4cqx.short.gy/85d30e" in urls
+    assert not any("southype" in u for u in urls)  # TLD 30 huruf: teks font yang menempel, bukan domain

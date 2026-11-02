@@ -55,3 +55,10 @@ def test_high_level_is_dangerous_and_lists_high_findings(monkeypatch):
     f = Finding("R11", "Mengirim data ke bot Telegram", "tinggi", 30)
     r = final.conclude(parsed(), {}, [f], "Tinggi")
     assert r["status"] == "Berbahaya" and "Mengirim data ke bot Telegram (R11)." in r["alasan"]
+
+
+def test_gambling_is_dangerous_with_specific_advice(monkeypatch):
+    monkeypatch.delenv("ABUSECH_AUTH_KEY", raising=False)
+    f = Finding("R12", "Aplikasi judi online", "tinggi", 30)
+    r = final.conclude(parsed(), {}, [f], "Rendah")  # skor rendah pun tetap Berbahaya
+    assert r["status"] == "Berbahaya" and "aduankonten.id" in r["saran"][1]

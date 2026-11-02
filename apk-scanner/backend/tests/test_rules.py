@@ -70,3 +70,43 @@ def test_telegram_bot_detected_and_token_masked():
     # token berdiri sendiri (mis. di resources) juga tertangkap dan disamarkan
     [g] = evaluate(parsed(texts=[f"token={TOKEN}"]), NO_PACKER)
     assert g.bukti == ["123456789:AAA…AAA"]
+
+
+# R12–R14: pola dari analisis APK judi online nyata (pgbet.apk); teks di bawah buatan sendiri, bukan salinan APK itu
+GAMBLING_UI = ['{"4d_lottery": "4D Lottery", "casino": "Casino", "deposit": "Deposit", "withdraw": "Tarik Dana"}']
+
+
+def test_gambling_app_triggers_r12():
+    [f] = evaluate(parsed(texts=GAMBLING_UI), NO_PACKER)
+    assert f.rule_id == "R12" and f.tingkat == "tinggi"
+    # kunci dan nilai JSON sama-sama dihitung; "4d_lottery" tidak, karena "_" bukan batas kata
+    assert f.bukti == ["casino ×2", "lottery ×1", "deposit ×2", "withdraw ×1", "tarik dana ×1"]
+
+
+def test_bank_app_vocabulary_is_not_gambling():
+    # aplikasi bank sah: setor/tarik dan bonus, tetapi tanpa istilah taruhan
+    texts = ["Deposit ke rekening", "Withdraw ke bank", "Bonus poin", "Jadwal slot waktu"]
+    assert ids(parsed(texts=texts)) == []
+
+
+def test_single_gambling_word_is_not_enough():
+    assert ids(parsed(texts=["Jackpot!", "Deposit"])) == []
+
+
+def test_bundled_secrets_report_key_names_only():
+    env = "API_URL='https://api.example.org'\nBITLY_TOKEN='abcdef0123456789'\nSECRET_KEY='Zz9Yy8Xx7Ww6'\n" \
+          "SMARTICO_SALT_KEY='null'\nFB_CLIENT_TOKEN=''\nOPEN_TELEMETRY_AUTHORIZATION_HEADER='Basic Y2xpZW50OnNlY3JldA=='\n"
+    [f] = evaluate(parsed(texts=[env]), NO_PACKER)
+    assert f.rule_id == "R13"
+    assert f.bukti == ["BITLY_TOKEN", "OPEN_TELEMETRY_AUTHORIZATION_HEADER", "SECRET_KEY"]  # null/kosong diabaikan
+    assert not any("abcdef" in b or "Basic" in b for b in f.bukti)  # nilai rahasia tidak pernah bocor ke laporan
+
+
+def test_anti_emulator_checks_trigger_r14_but_compiler_marker_does_not():
+    pk = {"terdeteksi": False, "detail": [], "info_lain": {"compiler": ["r8"], "anti_vm": ["Build.FINGERPRINT check"]}}
+    [f] = evaluate(parsed(), pk)
+    assert f.rule_id == "R14" and f.bukti == ["anti_vm: Build.FINGERPRINT check"]
+
+
+def test_short_gy_subdomain_counts_as_shortener():
+    assert ids(parsed(urls=["https://4cqx.short.gy/85d30e"])) == ["R09"]

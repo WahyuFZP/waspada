@@ -16,6 +16,13 @@ URL_RE = re.compile(r"https?://[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]+")
 IPV4_RE = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}")
 IP_ONLY_RE = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?")
 RAW_SCAN_LIMIT = 5 * 1024 * 1024  # resource/asset lebih besar dari ini dilewati agar scan tetap cepat
+# Flutter/React Native menaruh logika aplikasi di library native (libapp.so ~12 MB), bukan di DEX
+NATIVE_SCAN_LIMIT = 32 * 1024 * 1024
+PRINTABLE_RE = re.compile(rb"[\x20-\x7e]{6,}")
+# tautan pendek sering ditulis tanpa skema di file konfigurasi (BITLY_URL='bit.ly/48Y4K2L')
+SHORT_RE = re.compile(r"(?<![\w.-])(?:[a-z0-9-]+\.)*(?:bit\.ly|cutt\.ly|s\.id|short\.gy|tinyurl\.com|goo\.gl|is\.gd|"
+                      r"shorturl\.at|rb\.gy|ow\.ly|rebrand\.ly)/[A-Za-z0-9_-]{3,}")
+TLD_RE = re.compile(r"[a-z]{2,24}|xn--[a-z0-9-]{1,59}")
 
 # Izin protectionLevel "dangerous" di AOSP + izin khusus yang sering disalahgunakan. Daftar tetap, karena
 # get_details_permissions() androguard menganggap izin yang tidak ia kenali "dangerous" (mis. INTERNET pada APK lama).
@@ -55,6 +62,19 @@ def _raw_texts(path):
                 data = z.read(info)
                 # string pool arsc bisa UTF-8 atau UTF-16
                 yield data.decode("latin-1") + "\n" + data.decode("utf-16-le", "ignore")
+
+
+def _native_texts(path):
+    """String ASCII dari library native, satu teks per .so agar regex URL/token tetap bekerja per baris."""
+    with zipfile.ZipFile(path) as z:
+        for info in z.infolist():
+            if info.filename.startswith("lib/") and info.filename.endswith(".so") and info.file_size <= NATIVE_SCAN_LIMIT:
+                yield "\n".join(s.decode("ascii") for s in PRINTABLE_RE.findall(z.read(info)))
+
+
+def _plausible_host(host):
+    """"https://appx" atau "southype.comnormaali…" (teks font yang menempel) bukan alamat yang bisa dihubungi."""
+    return bool(IPV4_RE.fullmatch(host) or ("." in host and TLD_RE.fullmatch(host.rsplit(".", 1)[1])))
 
 
 def _signer(a):
@@ -100,14 +120,17 @@ def parse(path):
     ])
 
     strings = stage("Kode DEX", lambda: [s for dex in a.get_all_dex() for s in DEX(dex).get_strings()])
-    texts = strings + stage("Resource & assets", lambda: list(_raw_texts(path)))
+    texts = (strings + stage("Resource & assets", lambda: list(_raw_texts(path)))
+             + stage("Library native", lambda: list(_native_texts(path))))
+    found = {u.rstrip(".,;)'\"") for t in texts for u in URL_RE.findall(t)}
+    found |= {"https://" + m for t in texts for m in SHORT_RE.findall(t)}
     hosts = {}
-    for u in {u.rstrip(".,;)'\"") for t in texts for u in URL_RE.findall(t)}:
+    for u in found:
         try:
             host = urlsplit(u).hostname or ""
         except ValueError:  # string mirip URL yang rusak, mis. "http://[%s" dari template format; bukan URL nyata
             continue
-        if "." in host:  # "https://appx" atau "https://www" adalah potongan string, bukan alamat yang bisa dihubungi
+        if _plausible_host(host):
             hosts[u] = host
     urls = sorted(hosts)
     # IP hanya dari host URL atau string DEX yang isinya persis IP(:port); "1.2.0.0" di tengah teks sering nomor versi.

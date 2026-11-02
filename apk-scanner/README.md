@@ -57,6 +57,12 @@ Tanpa kunci, laporan menandai pemeriksaan ini "dilewati".
 | R09 | IP publik literal atau tautan pendek | 10 |
 | R10 | Kirim SMS diam-diam (`SEND_SMS` + `sendTextMessage`) | 20 |
 | R11 | Kirim data ke bot Telegram (token disamarkan di laporan) | 30 |
+| R12 | Aplikasi judi online: ≥2 istilah taruhan (kasino, togel, sabung, …) + alur setor/tarik dana. Analisa Akhir selalu *Berbahaya* | 30 |
+| R13 | Kunci rahasia server tertanam (mis. file `.env` di dalam APK). Hanya nama kunci yang dilaporkan | 10 |
+| R14 | Berusaha menghindari pemeriksaan (APKiD: deteksi emulator, anti-debug, manipulasi resource) | 10 |
+
+Selain DEX dan resource, scanner juga membaca string di library native (`lib/*/*.so`, maks. 32 MB per file),
+karena aplikasi Flutter menaruh logikanya di `libapp.so`. Tautan pendek tanpa `https://` (`bit.ly/…`) ikut tertangkap.
 
 Skor = min(100, jumlah bobot); 0–29 Rendah, 30–59 Sedang, 60–100 Tinggi.
 
