@@ -69,18 +69,86 @@ Berita memakai `region` dan `topic` sebagai pengganti `host`/`src_ip`.
 | `GET` | `/alerts?limit=50` | Alert terbaru, termasuk event pendukung dan `mitre` |
 | `GET` | `/stream` | SSE; `event: event` dan `event: alert`, data = JSON |
 
-## Menjalankan
+## Instalasi (untuk kolaborator)
 
-Backend + PostgreSQL lewat Docker Compose (hanya butuh Docker Desktop):
+### Prasyarat
 
-```bash
-docker compose up --build
-```
+| Alat | Versi | Catatan |
+|---|---|---|
+| Git | apa saja | |
+| Docker Desktop | terbaru | Harus **sedang berjalan** sebelum perintah `docker compose`. Menjalankan PostgreSQL, backend SIEM, dan scanner APK |
+| Node.js | 20 LTS atau lebih baru | Hanya untuk dashboard Next.js |
 
-API di http://localhost:8000 (docs: `/docs`), Postgres di `localhost:5432` (user/password/db: `waspada`).
-Opsional: set `DISCORD_WEBHOOK_URL` sebelum `docker compose up` untuk alert ke Discord, `CORS_ORIGINS` (default `http://localhost:3000`).
+Python **tidak perlu** dipasang: semua kode Python berjalan di dalam container (Python 3.11).
+Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner APK), `5432` (PostgreSQL).
 
-Demo (skenario sintetis, deterministik):
+### Langkah
+
+1. Clone repo dan masuk ke branch kerja (selama belum di-merge ke `main`):
+
+   ```bash
+   git clone https://github.com/WahyuFZP/waspada.git
+   cd waspada
+   git checkout feature/crt-entry
+   ```
+
+2. (Opsional) Buat file `.env` di root repo. File ini tidak ikut ke Git, dan semua isinya boleh dikosongkan:
+
+   ```
+   # alert SIEM ke Discord
+   DISCORD_WEBHOOK_URL=
+   # cek hash APK ke MalwareBazaar, kunci gratis di https://auth.abuse.ch
+   ABUSECH_AUTH_KEY=
+   ```
+
+3. Jalankan backend, database, dan scanner APK (build pertama butuh beberapa menit):
+
+   ```bash
+   docker compose up -d --build
+   docker compose ps
+   ```
+
+   Ketiga service (`db`, `backend`, `apk-scanner`) harus berstatus `Up`, dan `db` berstatus `healthy`.
+
+4. Jalankan dashboard di terminal lain:
+
+   ```bash
+   cd frontend
+   npm ci
+   npm run dev
+   ```
+
+   `npm ci` memasang versi paket persis sesuai `package-lock.json`.
+
+5. Buka http://localhost:3000, lalu pilih modul **Pemantauan SIEM** atau **Pemeriksa APK**.
+   Dashboard SIEM masih kosong sampai data demo diisi (lihat **Demo** di bawah).
+
+| Alamat | Isi |
+|---|---|
+| http://localhost:3000 | Dashboard (landing, `/pemantauan`, `/apk`) |
+| http://localhost:8000/docs | API backend SIEM |
+| http://localhost:8001/docs | API scanner APK |
+| `localhost:5432` | PostgreSQL (user/password/db: `waspada`, hanya untuk demo lokal) |
+
+Semua port hanya bisa diakses dari komputer itu sendiri (`127.0.0.1`), bukan dari perangkat lain di Wi-Fi yang sama. Ini disengaja.
+
+### Kalau ada masalah
+
+| Gejala | Penyebab dan solusi |
+|---|---|
+| `failed to connect to the docker API` / `dockerDesktopLinuxEngine` | Docker Desktop belum berjalan. Buka Docker Desktop, tunggu sampai statusnya *running*, ulangi perintah |
+| `npm run dev` memakai port 3001, bukan 3000 | Port 3000 dipakai proses lain. API **hanya menerima** dashboard dari `localhost:3000`, jadi hentikan proses lain itu dulu |
+| Dashboard SIEM menampilkan "Terputus" | Backend belum jalan: cek `docker compose ps` dan `docker compose logs backend` |
+| Unggah APK gagal "tidak dapat dijangkau" | Service `apk-scanner` belum jalan: cek `docker compose logs apk-scanner` |
+| Scanner APK error *permission denied* di `/data` | Volume data dari versi lama (sebelum scanner berjalan sebagai non-root). Jalankan sekali: `docker run --rm -v waspada_apkdata:/data --user root waspada-apk-scanner chown -R 10001 /data`, lalu `docker compose up -d` |
+| `npm ci` memberi peringatan `install-scripts ... unrs-resolver` | Aman diabaikan: skrip itu milik alat lint, bukan bagian aplikasi, dan dashboard tetap berjalan normal |
+| Setelah `git pull`, perubahan backend/scanner tidak terasa | Build ulang image: `docker compose up -d --build` |
+
+Opsional lain: `CORS_ORIGINS` (default `http://localhost:3000`).
+
+### Demo
+
+Skenario sintetis, deterministik:
 
 ```bash
 docker compose exec backend python replay.py scenarios/intrusi.jsonl --delay 1
@@ -96,19 +164,15 @@ docker compose exec backend python rss.py   # polling 21 feed berita setiap 5 me
 
 Jalankan replay `intrusi.jsonl` **sebelum** `kev.py`: event KEV dari skenario memakai URL yang sama dengan hasil `kev.py`, sehingga yang datang belakangan dibuang sebagai duplikat.
 
-Mulai demo dari data kosong: `docker compose down -v` (menghapus volume Postgres) lalu `docker compose up` lagi.
+Mulai demo dari data kosong: `docker compose down -v` lalu `docker compose up -d` lagi. **Perhatian:** `-v` menghapus semua volume, termasuk database SIEM **dan** riwayat scan APK.
 
-Dashboard (Next.js, alert real-time via SSE `/stream`):
+URL backend untuk dashboard bisa diganti lewat `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`) dan `NEXT_PUBLIC_APK_API_URL` (default `http://localhost:8001`).
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Test
 
-Buka http://localhost:3000. URL backend bisa diganti lewat `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
+SIEM (memakai database terpisah `waspada_test`): `docker compose exec backend pytest -q -p no:cacheprovider`
 
-Test (memakai database terpisah `waspada_test`): `docker compose exec backend pytest -q -p no:cacheprovider`
+Scanner APK: `docker compose exec apk-scanner pytest -q -p no:cacheprovider`
 
 ## Pemeriksa APK
 
