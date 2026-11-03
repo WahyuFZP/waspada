@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ApkHeader } from "@/components/apk-header";
+import { Phone3D } from "@/components/objects-3d";
+import { Reveal } from "@/components/reveal";
 import { formatTime } from "@/lib/api";
 import { LEVEL_STYLE, listScans, scanApk, type ScanSummary } from "@/lib/apk";
 
@@ -43,15 +45,20 @@ export default function ApkUploadPage() {
     <>
       <ApkHeader />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-10 md:px-6">
-        <header className="max-w-3xl">
-          <h1 className="font-display text-4xl font-bold leading-tight md:text-6xl">Periksa APK sebelum dipasang</h1>
-          <p className="mt-3 text-ink-muted md:text-lg">
-            Unggah file APK yang didapat di luar Play Store, misalnya kiriman WhatsApp berupa undangan, foto paket, atau
-            surat tilang. File hanya dibaca, tidak pernah dipasang atau dijalankan. Hasilnya berupa indikasi untuk
-            ditinjau, bukan vonis akhir.
-          </p>
+        <header className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
+          <Reveal className="max-w-3xl">
+            <h1 className="font-display text-4xl font-bold leading-tight md:text-6xl">Periksa APK sebelum dipasang</h1>
+            <p className="mt-3 text-ink-muted md:text-lg">
+              Unggah file APK yang didapat di luar Play Store, misalnya kiriman WhatsApp berupa undangan, foto paket, atau
+              surat tilang. File hanya dibaca, tidak pernah dipasang atau dijalankan. Hasilnya berupa indikasi untuk
+              ditinjau, bukan vonis akhir.
+            </p>
+          </Reveal>
+          {/* di HP disembunyikan: kotak unggah lebih penting di layar sempit, dan progres sudah tertulis di sana */}
+          <Phone3D scanning={!!busy} className="ml-36 mr-10 mt-8 hidden h-72 w-40 md:block" />
         </header>
 
+        <Reveal delay={0.1}>
         <section aria-label="Unggah APK">
           <button
             type="button"
@@ -67,7 +74,7 @@ export default function ApkUploadPage() {
               start(e.dataTransfer.files[0]);
             }}
             disabled={!!busy}
-            className={`flex min-h-52 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 text-center transition-colors ${
+            className={`slab flex min-h-52 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 text-center ${
               drag ? "border-gold bg-gold/10" : "border-line bg-surface hover:border-siber"
             } disabled:cursor-wait`}
           >
@@ -103,7 +110,9 @@ export default function ApkUploadPage() {
             {error && `Gagal memeriksa: ${error}`}
           </p>
         </section>
+        </Reveal>
 
+        <Reveal>
         <section aria-labelledby="riwayat-title" className="flex flex-col gap-3">
           <h2 id="riwayat-title" className="font-display text-3xl font-bold">
             Riwayat pemeriksaan
@@ -152,6 +161,7 @@ export default function ApkUploadPage() {
             </div>
           )}
         </section>
+        </Reveal>
       </main>
     </>
   );

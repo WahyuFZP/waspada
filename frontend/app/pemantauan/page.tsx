@@ -11,6 +11,8 @@ import { Hero } from "@/components/hero";
 import { LogoMark } from "@/components/logo-mark";
 import { NewsFeed } from "@/components/news-feed";
 import { PipelineFlow } from "@/components/pipeline-flow";
+import { Reveal } from "@/components/reveal";
+import { SignalLines } from "@/components/signal-lines";
 import { StatsBar } from "@/components/stats-bar";
 import { useAlertStream } from "@/hooks/use-alert-stream";
 import { API } from "@/lib/api";
@@ -40,6 +42,7 @@ export default function Dashboard() {
   return (
     <MotionConfig reducedMotion="user">
       <div inert={selected !== null}>
+        <SignalLines />
         <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
             <div className="flex items-center gap-8">
@@ -71,7 +74,9 @@ export default function Dashboard() {
 
         <Hero status={status} pulseKey={pulseKey} />
 
-        <PipelineFlow events={events} alerts={alerts} loaded={loaded} />
+        <Reveal>
+          <PipelineFlow events={events} alerts={alerts} loaded={loaded} />
+        </Reveal>
 
         <section
           id="pemantauan"

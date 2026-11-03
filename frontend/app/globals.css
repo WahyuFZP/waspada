@@ -11,6 +11,7 @@
   --color-ink: #f1f4ef;
   --color-ink-muted: #a7b8a6;
   --color-gold: #d6af58; /* bingkai & pita emas */
+  --color-gold-deep: #8f7438; /* sisi objek 3D yang tidak terkena cahaya */
 
   --color-sev-critical: #f05252;
   --color-sev-high: #f2913d;
@@ -45,4 +46,31 @@ body {
   html {
     scroll-behavior: auto;
   }
+}
+
+/* Lempeng berketebalan: bayangan keras bertumpuk tanpa blur membuat unit tampak seperti perangkat fisik.
+   Dipakai hanya untuk unit nyata (kartu modul, tahap alur korelasi, kotak unggah), bukan semua kartu. */
+.slab {
+  box-shadow:
+    0 1px 0 var(--color-line),
+    0 2px 0 var(--color-line),
+    0 3px 0 var(--color-line),
+    0 4px 0 var(--color-line),
+    0 5px 0 var(--color-line),
+    0 6px 0 var(--color-line),
+    0 7px 0 var(--color-line),
+    0 8px 0 #050906,
+    0 18px 24px -12px rgb(0 0 0 / 0.75);
+  transition:
+    transform 150ms ease-out,
+    box-shadow 150ms ease-out;
+}
+/* unit yang bisa diklik "tertekan" saat disorot/ditekan: ketebalan berkurang, bukan melayang */
+.slab-press:hover,
+.slab-press:active {
+  transform: translateY(6px);
+  box-shadow:
+    0 1px 0 var(--color-line),
+    0 2px 0 #050906,
+    0 6px 10px -8px rgb(0 0 0 / 0.7);
 }

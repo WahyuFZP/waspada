@@ -58,6 +58,8 @@ Contoh: "Sambungan ke server pemantauan terputus. Sistem akan menyambung ulang s
 
 Gerak hanya menandai kejadian atau status nyata. Satu-satunya gerak berulang adalah paket di jaring hero, dan itu hanya berjalan saat stream terhubung. Semua dimatikan bila pengguna memilih *reduce motion*.
 
+Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/signal-lines.tsx`) di landing, dashboard, dan Pemeriksa APK. Garis pendek melintas acak di jalur horizontal/vertikal kelipatan 5%, menggambarkan sinyal dari banyak sumber yang diolah WASPADA (*Wide-Area Signal Processing*). Hijau = sinyal, emas = paket data. Opasitas 0,45 di belakang semua panel agar teks tetap terbaca; tidak dirender saat *reduce motion*.
+
 | Kejadian | Gerak |
 |---|---|
 | Alert baru | Masuk dari atas, kartu lain bergeser (layout spring) |
@@ -68,6 +70,17 @@ Gerak hanya menandai kejadian atau status nyata. Satu-satunya gerak berulang ada
 | Alert baru dari stream | Inti jaring memancarkan satu gelombang merah |
 | Event / alert baru dari stream | **Alur korelasi** (Ingest → Normalisasi → Korelasi → Peringatan): paket emas per event menuju Korelasi, paket merah per alert menuju Peringatan. Tanpa data baru, alur diam |
 | Panel pemantauan masuk layar | Naik halus sekali (scroll reveal) |
+| Section lain masuk layar (alur korelasi, kotak unggah, riwayat, detail hasil scan) | Naik halus sekali, komponen `Reveal` |
+| Landing dibuka | Kentongan 3D berayun sekali lalu diam, seperti baru dipukul: peringatan dibunyikan |
+| APK sedang diunggah/dianalisis | Garis pindai bergerak di layar ponsel 3D dan titik di kartu berkedip; diam saat tidak ada proses |
+| Halaman Pemeriksa APK terbuka | Lima kartu pemeriksaan (izin, sertifikat, URL dan domain, kode tersembunyi, judi online) terus keluar-masuk dari layar ponsel bergantian. Isinya apa yang diperiksa, bukan hasil: halaman unggah belum punya hasil scan |
+| Hasil scan dibuka | Skor naik dari 0 ke nilainya (akumulasi bobot aturan). Dimulai di frame pertama agar angka asli tetap tampil bila browser belum menggambar |
+
+## Motif 3D: perangkat fisik
+
+Dua objek 3D tanpa WebGL (`components/objects-3d.tsx`): wajah SVG ditumpuk beberapa lapis sepanjang sumbu Z lalu dimiringkan dengan perspektif CSS. Hanya objek yang punya makna: **kentongan** (logo, peringatan dini) di landing dan **ponsel berisi paket APK** di Pemeriksa APK. Dashboard tidak memakai objek 3D agar tetap tenang untuk analis.
+
+Unit nyata diberi kelas `.slab` (bayangan keras bertumpuk tanpa blur, `app/globals.css`) agar tampak seperti perangkat fisik: kartu modul di landing (ditambah `.slab-press`, tertekan saat disorot), tahap alur korelasi, dan kotak unggah APK. Tidak dipakai untuk semua kartu.
 
 ## Tata letak
 
