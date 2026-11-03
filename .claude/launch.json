@@ -8,6 +8,12 @@
       "port": 8000
     },
     {
+      "name": "apk-scanner",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd apk-scanner/backend && PATH=$PWD/.venv/bin:$PATH exec .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8001 --reload"],
+      "port": 8001
+    },
+    {
       "name": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],

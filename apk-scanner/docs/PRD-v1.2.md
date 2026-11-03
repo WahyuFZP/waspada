@@ -1,7 +1,19 @@
 # PRD: APK Security Scanner (MVP)
 
-Status: Draft v1.2 · Tanggal: 2026-11-01 · Pemilik: Wahyu Fikri Zeni Putra
-Revisi dari v1.1 setelah uji APK dompet digital nyata: menambah Analisa Akhir, analisis sertifikat, dan cek hash opsional.
+Status: Draft v1.3 · Tanggal: 2026-11-03 · Pemilik: Wahyu Fikri Zeni Putra
+Revisi dari v1.2 setelah uji korpus 13 APK fixture (benign, bersinyal scam): scanner hanya menangkap 1 dari 12 ancaman,
+jadi rule engine diperluas (R12–R23) dan parser mengekstrak atribut manifest, config jaringan, dan isi arsip.
+
+## Perubahan dari v1.2 (v1.3)
+
+| Bagian | Perubahan | Alasan |
+|---|---|---|
+| §6 | Parser menambah tahap *Atribut manifest* (label, debuggable, cleartext, prioritas receiver, provider terbuka, StrandHogg, App Link), *Network security config* (nilai dibaca via AXML), *Isi arsip* (.so, muatan tersamar, EICAR, jejak apktool); `lib/` ikut dipindai teks | Rule baru butuh fakta yang sebelumnya tidak diekstrak; `launchMode` di AXML adalah angka (`2` = singleTask) |
+| §7 R01 | +10 bila ada receiver `SMS_RECEIVED` | Receiver adalah bukti lebih kuat (catatan v1.1), tetapi dulu tanpa bobot: cadangan SMS sah dan pencuri OTP sama-sama 20 |
+| §7 R12 | Pola pencegat OTP (receiver + ≥2 pemberat), ikut kombinasi R07 | Membedakan pencuri OTP (prioritas maks, `SEND_SMS`, boot) dari utilitas SMS biasa tanpa menaikkan yang terakhir |
+| §7 R13–R20 | Peniruan aplikasi resmi, muatan tersembunyi/EICAR/apktool, WebView tidak aman, jaringan & manifest lemah, anti-analisis | Kategori scam yang sebelumnya 0 di korpus; bobot dibatasi agar kapabilitas yang lazim di app sah tidak sendirian mencapai Tinggi |
+| §7 R21–R23 | Native, FCM, identitas perangkat: masing-masing 30 (Sedang) dan menumpuk | Dipilih sensitivitas atas spesifisitas: korpus menuntut ketiganya ≥Sedang sendirian. Risiko: aplikasi Flutter + Firebase + analitik yang sah mencapai Tinggi; turunkan ke 0 atau batasi jumlahnya di `scoring.py` bila false positive terasa |
+| §12 | Test rule baru (data buatan) + `cli.py` untuk menilai korpus lewat `run_scan.py` | Verifikasi end-to-end tanpa API |
 
 ## Perubahan dari v1.1
 

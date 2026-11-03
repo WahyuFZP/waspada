@@ -57,8 +57,20 @@ Tanpa kunci, laporan menandai pemeriksaan ini "dilewati".
 | R09 | IP publik literal atau tautan pendek | 10 |
 | R10 | Kirim SMS diam-diam (`SEND_SMS` + `sendTextMessage`) | 20 |
 | R11 | Kirim data ke bot Telegram (token disamarkan di laporan) | 30 |
+| R12 | Pola pencegat OTP: receiver `SMS_RECEIVED` + ≥2 pemberat (prioritas >0, `SEND_SMS`, `BOOT_COMPLETED`, `READ_PHONE_STATE`); ikut R07 | 25 |
+| R13 | Meniru aplikasi resmi: package menumpang nama resmi / package resmi berkunci debug, label homoglyph, label menyebut merek lain; versi janggal & App Link palsu menguatkan | 20–60 |
+| R14 | Muatan tersembunyi: berkas "gambar" berisi ZIP/DEX/ELF, atau DEX/ELF di `assets/` | 15–40 |
+| R15 | Penanda uji antivirus EICAR | 30 |
+| R16 | Jejak apktool (`apktool.yml`, `original/`): APK dirakit ulang | 10 |
+| R17 | WebView tidak aman: `addJavascriptInterface` dan/atau `onReceivedSslError`+`proceed` (+akses file) | 20–60 |
+| R18 | Lalu lintas tidak aman: `usesCleartextTraffic`, NSC `cleartextTrafficPermitted="true"`, CA pengguna (nilainya dibaca; config pengetat tidak tertandai) | 15–30 |
+| R19 | Manifest lemah: `debuggable`, provider exported+grantUri, StrandHogg (`taskAffinity=""`+`singleTask`) | 10–30 |
+| R20 | Anti-analisis: string root / emulator / Frida-Xposed / debugger, 10 per kategori | 10–30 |
+| R21–R23 | Kapabilitas lazim: pustaka native (.so), layanan push FCM, pembacaan identitas perangkat — masing-masing Sedang sendirian dan menumpuk (pilihan sensitivitas; aplikasi Flutter + Firebase + analitik yang sah = 90, Tinggi) | 30 |
 
-Skor = min(100, jumlah bobot); 0–29 Rendah, 30–59 Sedang, 60–100 Tinggi.
+R01 bernilai 30 (bukan 20) bila ada receiver `SMS_RECEIVED`. Skor = min(100, jumlah bobot); 0–29 Rendah, 30–59 Sedang, 60–100 Tinggi.
+
+Semua rule bisa dijalankan dari terminal tanpa Docker/API: `python cli.py app.apk` (mencetak `VERDICT=` per APK).
 
 ## Test
 

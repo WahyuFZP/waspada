@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from loguru import logger
 
 from androguard.core.apk import APK
+from androguard.core.axml import AXMLPrinter
 from androguard.core.dex import DEX
 
 logger.remove()  # androguard mencetak log debug sangat banyak ke stderr
@@ -16,6 +17,11 @@ URL_RE = re.compile(r"https?://[A-Za-z0-9._~:/?#\[\]@!$&'()*+,;=%-]+")
 IPV4_RE = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}")
 IP_ONLY_RE = re.compile(r"(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?")
 RAW_SCAN_LIMIT = 5 * 1024 * 1024  # resource/asset lebih besar dari ini dilewati agar scan tetap cepat
+EICAR_SCAN_LIMIT = 1024 * 1024    # EICAR hanya 68 byte; berkas besar tidak perlu dibaca utuh
+EICAR = rb"X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+MAGIC = {b"PK\x03\x04": "zip", b"dex\n": "dex", b"\x7fELF": "elf"}  # isi yang bisa dipasang/dimuat sebagai kode
+IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+LAUNCH_MODE = {"0": "standard", "1": "singleTop", "2": "singleTask", "3": "singleInstance"}  # AXML menyimpan enum sebagai angka
 
 # Izin protectionLevel "dangerous" di AOSP + izin khusus yang sering disalahgunakan. Daftar tetap, karena
 # get_details_permissions() androguard menganggap izin yang tidak ia kenali "dangerous" (mis. INTERNET pada APK lama).
@@ -48,10 +54,10 @@ def _int(value):
 
 
 def _raw_texts(path):
-    """Teks dari resources.arsc & assets: tempat token/URL pelaku sering disimpan selain di DEX."""
+    """Teks dari resources.arsc, assets, dan pustaka native (lib/): tempat token/URL pelaku sering disimpan selain di DEX."""
     with zipfile.ZipFile(path) as z:
         for info in z.infolist():
-            if (info.filename == "resources.arsc" or info.filename.startswith("assets/")) and info.file_size <= RAW_SCAN_LIMIT:
+            if (info.filename == "resources.arsc" or info.filename.startswith(("assets/", "lib/"))) and info.file_size <= RAW_SCAN_LIMIT:
                 data = z.read(info)
                 # string pool arsc bisa UTF-8 atau UTF-16
                 yield data.decode("latin-1") + "\n" + data.decode("utf-16-le", "ignore")
@@ -68,6 +74,75 @@ def _signer(a):
         "berlaku_hingga": cert["tbs_certificate"]["validity"]["not_after"].native.date().isoformat() if cert else None,
         "debug": bool(subject) and "Android Debug" in subject,  # kunci bawaan Android Studio, bukan kunci rilis
     }
+
+
+def _manifest(a, xml, full):
+    """Atribut manifest yang dipakai rule di luar komponen & izin: label, flag aplikasi, prioritas receiver,
+    provider terbuka, activity StrandHogg, dan host App Link yang diklaim terverifikasi."""
+    app = xml.find("application")
+    attr = lambda el, n: el.get(NS + n) if el is not None else None
+    return {
+        "label": a.get_app_name(),
+        "debuggable": attr(app, "debuggable") == "true",
+        "cleartext": attr(app, "usesCleartextTraffic") == "true",
+        "prioritas_receiver": {full(el.get(NS + "name")): max((_int(f.get(NS + "priority")) or 0 for f in el.findall("intent-filter")), default=0)
+                               for el in xml.iter("receiver")},
+        "provider_terbuka": [full(el.get(NS + "name")) for el in xml.iter("provider")
+                             if el.get(NS + "exported") == "true" and el.get(NS + "grantUriPermissions") == "true"],
+        # StrandHogg: taskAffinity kosong + singleTask membuat activity bisa menyusup ke task aplikasi lain (login palsu)
+        "hijack_task": [full(el.get(NS + "name")) for el in xml.iter("activity")
+                        if el.get(NS + "taskAffinity") == "" and LAUNCH_MODE.get(el.get(NS + "launchMode"), el.get(NS + "launchMode")) == "singleTask"],
+        "applink_host": sorted({d.get(NS + "host") for el in xml.iter("activity") for f in el.findall("intent-filter")
+                                if f.get(NS + "autoVerify") == "true" for d in f.findall("data") if d.get(NS + "host")}),
+    }
+
+
+def _nsc(path):
+    """res/xml yang berisi network-security-config: izin lalu lintas tanpa TLS dan kepercayaan pada CA pengguna.
+    Nilai atributnya yang dibaca (bukan sekadar nama), supaya config yang justru memperketat tidak ikut tertandai."""
+    out = {"cleartext": False, "user_ca": False}
+    with zipfile.ZipFile(path) as z:
+        for info in z.infolist():
+            if not (info.filename.startswith("res/xml/") and info.filename.endswith(".xml")) or info.file_size > RAW_SCAN_LIMIT:
+                continue
+            try:
+                xml = AXMLPrinter(z.read(info)).get_xml().decode("utf-8", "ignore")
+            except Exception:  # bukan AXML atau rusak: berkas lain tetap diperiksa
+                continue
+            if "<network-security-config" in xml:
+                out["cleartext"] |= 'cleartextTrafficPermitted="true"' in xml
+                out["user_ca"] |= 'src="user"' in xml
+    return out
+
+
+def _magic(head):
+    return next((t for m, t in MAGIC.items() if head.startswith(m)), None)
+
+
+def _arsip(path):
+    """Isi arsip di luar manifest/DEX: pustaka native, muatan yang disamarkan sebagai gambar atau diselipkan di
+    assets (pola dropper), penanda uji antivirus EICAR, dan jejak apktool (APK dibongkar lalu dirakit ulang)."""
+    out = {"native": [], "payload_tersamar": [], "payload_eksekusi": [], "eicar": [], "apktool": []}
+    with zipfile.ZipFile(path) as z:
+        for info in z.infolist():
+            n = info.filename
+            low = n.lower()
+            if low.endswith(".so"):
+                out["native"].append(n)
+            if n == "apktool.yml" or n.startswith(("original/", "unknown/")):
+                out["apktool"].append(n)
+            if info.is_dir():
+                continue
+            with z.open(info) as fh:
+                head = fh.read(8)
+                tipe = _magic(head)
+                if tipe and low.endswith(IMAGE_EXT):
+                    out["payload_tersamar"].append(f"{n}: berkas gambar berisi {tipe}")
+                elif tipe in ("dex", "elf") and low.startswith(("assets/", "res/raw/")):
+                    out["payload_eksekusi"].append(f"{n}: {tipe}")
+                if info.file_size <= EICAR_SCAN_LIMIT and EICAR in head + fh.read():
+                    out["eicar"].append(n)
+    return out
 
 
 def parse(path):
@@ -119,6 +194,9 @@ def parse(path):
 
     permissions = sorted(set(a.get_permissions()))
     signer = stage("Sertifikat", lambda: _signer(a), kosong=dict)
+    manifest = stage("Atribut manifest", lambda: _manifest(a, xml, full), kosong=dict)
+    nsc = stage("Network security config", lambda: _nsc(path), kosong=dict)
+    arsip = stage("Isi arsip", lambda: _arsip(path), kosong=dict)
 
     return {
         "sha256": sha256_file(path),
@@ -134,5 +212,8 @@ def parse(path):
         "urls": urls,
         "ips": ips,
         "sertifikat": signer,
+        "manifest": manifest,  # untuk rule; tidak ikut ke laporan (seperti texts)
+        "nsc": nsc,
+        "arsip": arsip,
         "galat": galat,
     }

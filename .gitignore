@@ -6,3 +6,5 @@ __pycache__/
 *.sql
 *.backup
 !db/*.sql
+# hasil scan (APK karantina, laporan JSON) saat apk-scanner dijalankan lokal tanpa Docker
+apk-scanner/backend/data/
