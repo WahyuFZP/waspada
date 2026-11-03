@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApkHeader } from "@/components/apk-header";
 import { FinalAnalysisCard } from "@/components/final-analysis";
+import { CountUp, Reveal } from "@/components/reveal";
 import { formatTime } from "@/lib/api";
 import { getScan, kb, LEVEL_STYLE, type ScanResult } from "@/lib/apk";
 
@@ -77,7 +78,9 @@ export default function ApkResultPage() {
                 <p className="mt-2 max-w-2xl text-ink">{SUMMARY[r.level_risiko]}</p>
               </div>
               <div className="shrink-0 text-center">
-                <p className="font-display text-7xl font-bold leading-none">{r.skor}</p>
+                <p className="font-display text-7xl font-bold leading-none tabular-nums">
+                  <CountUp value={r.skor} />
+                </p>
                 <p className="font-data text-xs">dari 100</p>
               </div>
             </motion.section>
@@ -147,7 +150,7 @@ export default function ApkResultPage() {
               </ul>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <Reveal className="grid gap-6 lg:grid-cols-2">
               <section aria-labelledby="meta-title" className="rounded-xl border border-line bg-surface p-4">
                 <h2 id="meta-title" className="font-display text-2xl font-bold">
                   Aplikasi
@@ -191,7 +194,7 @@ export default function ApkResultPage() {
                   ))}
                 </ul>
               </section>
-            </div>
+            </Reveal>
 
             <p className="text-sm text-ink-muted">{r.catatan}</p>
           </>

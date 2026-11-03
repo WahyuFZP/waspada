@@ -68,7 +68,7 @@ export function PipelineFlow({ events, alerts, loaded }: { events: Event[]; aler
           {STAGES.map((s, i) => (
             <li key={s.name} className="flex flex-col items-center text-center">
               <span
-                className={`font-data relative z-10 flex h-10 w-10 items-center justify-center rounded-full border text-xs ${
+                className={`slab font-data relative z-10 flex h-10 w-10 items-center justify-center rounded-lg border text-xs ${
                   i === 3 ? "border-gold/60 bg-surface text-gold" : "border-siber/70 bg-surface text-siber-bright"
                 }`}
               >

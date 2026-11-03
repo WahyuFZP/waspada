@@ -4,7 +4,8 @@ import { animate, createScope, scrambleText, stagger } from "animejs";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { LogoMark } from "@/components/logo-mark";
+import { Kentongan3D } from "@/components/objects-3d";
+import { SignalLines } from "@/components/signal-lines";
 import { NetworkScan } from "@/components/network-scan";
 
 const rise = (delay: number) => ({
@@ -47,19 +48,26 @@ export default function Boot() {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const scope = createScope({ root, mediaQueries: { reduce: "(prefers-reduced-motion: reduce)" } }).add((self) => {
-      if (self?.matches.reduce) return;
-      animate(".title", { innerHTML: scrambleText({ chars: "uppercase" }), duration: 1100, delay: 200 });
-      animate(".tally-n", {
-        innerHTML: [0, (el: unknown) => Number((el as HTMLElement).dataset.n)],
-        modifier: (v: number) => Math.round(v),
-        duration: 1400,
-        delay: stagger(150, { start: 600 }),
-        ease: "outExpo",
+    let scope: ReturnType<typeof createScope> | undefined;
+    // dibuat di frame pertama: hitung naik dimulai dari 0, jadi bila browser belum menggambar, angka asli tetap tampil
+    const id = requestAnimationFrame(() => {
+      scope = createScope({ root, mediaQueries: { reduce: "(prefers-reduced-motion: reduce)" } }).add((self) => {
+        if (self?.matches.reduce) return;
+        animate(".title", { innerHTML: scrambleText({ chars: "uppercase" }), duration: 1100, delay: 200 });
+        animate(".tally-n", {
+          innerHTML: [0, (el: unknown) => Number((el as HTMLElement).dataset.n)],
+          modifier: (v: number) => Math.round(v),
+          duration: 1400,
+          delay: stagger(150, { start: 600 }),
+          ease: "outExpo",
+        });
+        animate(".live-dot", { scale: [1, 2.4], opacity: [0.7, 0], duration: 1600, loop: true, ease: "outQuad" });
       });
-      animate(".live-dot", { scale: [1, 2.4], opacity: [0.7, 0], duration: 1600, loop: true, ease: "outQuad" });
     });
-    return () => scope.revert();
+    return () => {
+      cancelAnimationFrame(id);
+      scope?.revert();
+    };
   }, []);
 
   return (
@@ -70,6 +78,7 @@ export default function Boot() {
         <div className="absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-siber/20 blur-3xl" />
         <div className="absolute -bottom-48 -right-40 h-[520px] w-[520px] rounded-full bg-gold/10 blur-3xl" />
       </div>
+      <SignalLines />
 
       <div className="relative mx-auto grid min-h-dvh max-w-6xl items-center gap-10 px-4 py-16 md:px-6 lg:grid-cols-[1fr_minmax(0,480px)]">
         <div className="flex flex-col gap-8">
@@ -81,7 +90,7 @@ export default function Boot() {
               </span>
               Pusat Siber · sistem aktif
             </p>
-            <LogoMark className="mt-4 h-16 w-16" />
+            <Kentongan3D className="mt-4 h-28 w-28 md:h-32 md:w-32" />
             <h1 className="title font-display mt-3 text-6xl font-bold leading-none md:text-8xl">WASPADA</h1>
             <p className="font-data mt-2 text-xs tracking-wide text-siber-bright">
               Wide-Area Signal Processing for Alerting and Domain Awareness
@@ -97,7 +106,7 @@ export default function Boot() {
               <li key={m.href}>
                 <Link
                   href={m.href}
-                  className="group flex h-full flex-col gap-3 rounded-2xl border border-line bg-surface/80 p-5 backdrop-blur-sm transition-[border-color,background-color,transform] duration-300 hover:-translate-y-1 hover:border-gold hover:bg-surface"
+                  className="slab slab-press group flex h-full flex-col gap-3 rounded-2xl border border-line bg-surface p-5 hover:border-gold"
                 >
                   <span className="flex flex-col items-start gap-3">
                     <span className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-surface-2 text-gold">
