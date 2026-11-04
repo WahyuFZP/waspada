@@ -4,10 +4,13 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ApkHeader } from "@/components/apk-header";
+import { ModuleHeader } from "@/components/module-header";
 import { FinalAnalysisCard } from "@/components/final-analysis";
+import { LearnMore } from "@/components/learn-more";
+import { DiffCard } from "@/components/diff-card";
+import { ComplianceCard } from "@/components/compliance-card";
 import { formatTime } from "@/lib/api";
-import { getScan, kb, LEVEL_STYLE, type ScanResult } from "@/lib/apk";
+import { diffScan, getScan, kb, LEVEL_STYLE, listScans, type ScanDiff, type ScanResult } from "@/lib/apk";
 
 const TINGKAT_STYLE = {
   tinggi: "text-sev-critical",
@@ -40,6 +43,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 export default function ApkResultPage() {
   const { id } = useParams<{ id: string }>();
   const [r, setR] = useState<ScanResult | null>(null);
+  const [beda, setBeda] = useState<ScanDiff | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,11 +52,22 @@ export default function ApkResultPage() {
       .catch((e) => setError((e as Error).message));
   }, [id]);
 
+  // bandingkan otomatis dengan pemeriksaan sebelumnya pada package yang sama (bila ada)
+  useEffect(() => {
+    if (!r) return;
+    listScans()
+      .then((hist) => {
+        const prev = hist.find((s) => s.package === r.aplikasi.package && s.scan_id !== r.scan_id && s.scanned_at < r.scanned_at);
+        if (prev) return diffScan(r.scan_id, prev.scan_id).then(setBeda);
+      })
+      .catch(() => {});
+  }, [r]);
+
   return (
     <>
-      <ApkHeader />
+      <ModuleHeader active="apk" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-10 md:px-6">
-        <Link href="/apk" className="font-data text-xs text-ink-muted hover:text-ink">
+        <Link href="/apk" className="font-data text-xs text-ink-muted hover:text-ink print:hidden">
           ← Periksa APK lain
         </Link>
         {error && (
@@ -82,7 +97,19 @@ export default function ApkResultPage() {
               </div>
             </motion.section>
 
+            {beda && (
+              <DiffCard
+                baru={beda.baru}
+                hilang={beda.hilang}
+                tetap={beda.tetap}
+                waktuLama={formatTime(beda.pembanding.lama.scanned_at)}
+                deltaText={`Skor ${beda.delta.skor_lama} → ${beda.delta.skor_baru}, risiko ${beda.delta.level_lama} → ${beda.delta.level_baru}.`}
+              />
+            )}
+
             {r.analisa_akhir && <FinalAnalysisCard a={r.analisa_akhir} />}
+
+            <ComplianceCard k={r.konteks_kepatuhan} />
 
             {!!r.tahap_gagal?.length && (
               <div role="alert" className="rounded-lg border border-sev-high/50 bg-sev-high/10 p-4 text-sm">
@@ -105,13 +132,22 @@ export default function ApkResultPage() {
                 <h2 id="temuan-title" className="font-display text-3xl font-bold">
                   Temuan ({r.temuan.length})
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => downloadJson(r)}
-                  className="font-data min-h-11 rounded-md border border-gold/50 bg-gold/10 px-3 text-xs text-gold hover:bg-gold/20"
-                >
-                  Unduh laporan JSON
-                </button>
+                <div className="flex gap-2 print:hidden">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="font-data min-h-11 rounded-md border border-siber/50 bg-siber/10 px-3 text-xs text-siber-bright hover:bg-siber/20"
+                  >
+                    Cetak / PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => downloadJson(r)}
+                    className="font-data min-h-11 rounded-md border border-gold/50 bg-gold/10 px-3 text-xs text-gold hover:bg-gold/20"
+                  >
+                    Unduh laporan JSON
+                  </button>
+                </div>
               </div>
               {r.temuan.length === 0 && (
                 <p className="rounded-md border border-dashed border-line p-6 text-ink-muted">
@@ -135,6 +171,7 @@ export default function ApkResultPage() {
                       </span>
                     </div>
                     <p className="mt-1 text-ink-muted">{f.penjelasan}</p>
+                    <LearnMore edu={f.edukasi} />
                     <ul aria-label="Bukti" className="mt-3 flex flex-wrap gap-1.5">
                       {f.bukti.map((b) => (
                         <li key={b} className="font-data break-all rounded-sm bg-surface-2 px-2 py-0.5 text-xs">

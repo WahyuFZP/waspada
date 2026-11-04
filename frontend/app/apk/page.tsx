@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ApkHeader } from "@/components/apk-header";
+import { ModuleHeader } from "@/components/module-header";
 import { formatTime } from "@/lib/api";
 import { LEVEL_STYLE, listScans, scanApk, type ScanSummary } from "@/lib/apk";
 
@@ -41,7 +41,7 @@ export default function ApkUploadPage() {
 
   return (
     <>
-      <ApkHeader />
+      <ModuleHeader active="apk" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-10 md:px-6">
         <header className="max-w-3xl">
           <h1 className="font-display text-4xl font-bold leading-tight md:text-6xl">Periksa APK sebelum dipasang</h1>
