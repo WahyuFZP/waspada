@@ -197,6 +197,10 @@ SIEM (memakai database terpisah `waspada_test`): `docker compose exec backend py
 
 Scanner APK: `docker compose exec apk-scanner pytest -q -p no:cacheprovider`
 
+Pengirim log: `docker run --rm -v "$PWD/shipper:/s" -w /s python:3.12-alpine python -m unittest`
+
+Semua test di atas, ditambah `tsc`, `eslint`, dan `next build` dashboard, juga dijalankan otomatis oleh GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) di setiap push ke `main` dan setiap pull request. Di CI, database GeoIP tidak diunduh, sehingga satu test lokasi IP publik dilewati.
+
 ## Pemeriksa APK
 
 Modul analisis statis APK (deteksi pencuri OTP / banking trojan) ada di [`apk-scanner/`](apk-scanner/README.md): service `apk-scanner` (port 8001) dan halaman dashboard `/apk`.
