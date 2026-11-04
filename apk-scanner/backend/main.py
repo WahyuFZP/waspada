@@ -16,6 +16,7 @@ import parser as apk_parser
 import report
 import rules
 import scoring
+import siem
 from db import Db
 from validator import MAX_BYTES, InvalidApk, validate
 
@@ -38,7 +39,9 @@ def analyze(path, filename, size):
     findings = rules.evaluate(parsed, pk)
     skor, level = scoring.score(findings)
     akhir = final.conclude(parsed, pk, findings, level)
-    return report.build(filename, size, parsed, pk, findings, skor, level, akhir)
+    hasil = report.build(filename, size, parsed, pk, findings, skor, level, akhir)
+    siem.kirim(hasil)  # #16 jembatan ke SIEM (opt-in via SIEM_INGEST_URL, fail-safe)
+    return hasil
 
 
 @app.post("/scan")

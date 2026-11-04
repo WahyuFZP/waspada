@@ -4,6 +4,8 @@ dan TIDAK melapor otomatis — hanya menjembatani temuan ke jalur RESMI (bukan m
 DISCLAIMER = ("Informasi umum untuk membantu menempuh jalur resmi, BUKAN nasihat hukum. Untuk kasus nyata, "
               "simpan bukti dan konsultasikan dengan pihak berwenang atau penasihat hukum.")
 
+PENIRU_RULES = ("R13", "R25")  # rule yang menandai aplikasi meniru merek/penerbit resmi (dipakai juga oleh disclosure.py)
+
 _K = {
     "komdigi": {"nama": "Pengaduan konten Komdigi",
                 "cara": "Laporkan aplikasi/konten yang menipu ke aduankonten.id (Kementerian Komunikasi dan Digital)."},
@@ -18,7 +20,7 @@ _K = {
 
 def konteks(status, rule_ids):
     """status = analisa_akhir['status']; rule_ids = id rule terpicu. -> blok konteks atau None."""
-    peniru = any(r in ("R13", "R25") for r in rule_ids)
+    peniru = any(r in PENIRU_RULES for r in rule_ids)
     if status != "Berbahaya" and not peniru:
         return None
     kanal = ["komdigi"] + (["bank"] if peniru else []) + ["polisi", "bssn"]

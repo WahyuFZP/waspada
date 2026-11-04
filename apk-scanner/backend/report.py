@@ -3,6 +3,7 @@ import uuid
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 
+import disclosure
 import kepatuhan
 import redaksi
 
@@ -17,6 +18,7 @@ def _temuan(f):
 
 
 def build(filename, size, parsed, packer, findings, skor, level, akhir):
+    konteks = kepatuhan.konteks(akhir["status"], [f.rule_id for f in findings])
     return {
         "schema_version": "1.2",
         "scan_id": str(uuid.uuid4()),
@@ -30,7 +32,9 @@ def build(filename, size, parsed, packer, findings, skor, level, akhir):
         "skor": skor,
         "level_risiko": level,
         "analisa_akhir": akhir,
-        "konteks_kepatuhan": kepatuhan.konteks(akhir["status"], [f.rule_id for f in findings]),
+        "konteks_kepatuhan": konteks,
+        # draf laporan santun (#18): hanya saat kasus layak-lapor (gate sama dengan konteks_kepatuhan)
+        "draf_disclosure": disclosure.draf(filename, parsed, akhir, findings) if konteks else None,
         "tahap_gagal": parsed["galat"],  # bagian yang tidak terperiksa; skor bisa lebih rendah dari seharusnya
         "catatan": CATATAN,
     }
