@@ -1,3 +1,4 @@
 # skrip dan config yang dijalankan di container Linux harus tetap LF
 *.sh text eol=lf
 demo/ssh-target/sshd_config text eol=lf
+demo/suricata/* text eol=lf
