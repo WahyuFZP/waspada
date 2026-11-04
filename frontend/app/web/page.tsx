@@ -12,6 +12,7 @@ export default function WebScanPage() {
   const [target, setTarget] = useState("");
   const [authorized, setAuthorized] = useState(false);
   const [periksaBerkas, setPeriksaBerkas] = useState(true);
+  const [periksaTls, setPeriksaTls] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<WebSummary[] | null>(null);
@@ -29,7 +30,7 @@ export default function WebScanPage() {
     setError(null);
     setBusy(true);
     try {
-      const r = await scanWeb({ target: target.trim(), authorized, periksa_berkas: periksaBerkas });
+      const r = await scanWeb({ target: target.trim(), authorized, periksa_berkas: periksaBerkas, periksa_tls: periksaTls });
       router.push(`/web/${r.scan_id}`);
     } catch (e) {
       setError((e as Error).message);
@@ -93,6 +94,23 @@ export default function WebScanPage() {
               <span className="text-sm">
                 Cek berkas sensitif yang mungkin terekspos (<span className="font-data text-xs">.git</span>,{" "}
                 <span className="font-data text-xs">.env</span>, dll.)
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={periksaTls}
+                onChange={(e) => setPeriksaTls(e.target.checked)}
+                disabled={busy}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-siber"
+              />
+              <span className="text-sm">
+                Periksa TLS lanjutan (protokol usang, cipher lemah, tanpa PFS)
+                <span className="mt-0.5 block text-xs text-ink-muted">
+                  Pemeriksaan ini <span className="text-gold">AKTIF</span> — membuka beberapa koneksi handshake ke
+                  server (bukan pasif). Jalankan hanya pada aset milik Anda atau yang Anda diizinkan menguji.
+                </span>
               </span>
             </label>
 

@@ -9,6 +9,7 @@ import { FinalAnalysisCard } from "@/components/final-analysis";
 import { LearnMore } from "@/components/learn-more";
 import { DiffCard } from "@/components/diff-card";
 import { ComplianceCard } from "@/components/compliance-card";
+import { DisclosureCard } from "@/components/disclosure-card";
 import { formatTime } from "@/lib/api";
 import { diffScan, getScan, kb, LEVEL_STYLE, listScans, type ScanDiff, type ScanResult } from "@/lib/apk";
 
@@ -110,6 +111,8 @@ export default function ApkResultPage() {
             {r.analisa_akhir && <FinalAnalysisCard a={r.analisa_akhir} />}
 
             <ComplianceCard k={r.konteks_kepatuhan} />
+
+            <DisclosureCard d={r.draf_disclosure} />
 
             {!!r.tahap_gagal?.length && (
               <div role="alert" className="rounded-lg border border-sev-high/50 bg-sev-high/10 p-4 text-sm">

@@ -18,6 +18,8 @@ const ICONS = {
   radar: "M12 3a9 9 0 1 0 9 9M12 7a5 5 0 1 0 5 5M12 12l6-6",
   phone: "M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2M9 9l2 2 4-4",
   globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M3.5 9h17M3.5 15h17M12 3c-2.5 2.6-2.5 15.4 0 18M12 3c2.5 2.6 2.5 15.4 0 18",
+  layers: "M12 3l8 4.5-8 4.5-8-4.5L12 3zM4 12l8 4.5 8-4.5M4 16.5l8 4.5 8-4.5",
+  clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3.5 2",
 };
 
 const MODULES = [
@@ -41,6 +43,20 @@ const MODULES = [
     title: "Pemeriksa Web",
     tag: "Untuk pemilik & pengembang situs",
     desc: "Periksa kelemahan keamanan aplikasi web Anda sendiri — header, TLS, cookie, berkas terekspos. Pasif, dengan izin, disertai saran perbaikan.",
+  },
+  {
+    href: "/inventaris",
+    icon: ICONS.layers,
+    title: "Inventaris Aset",
+    tag: "Untuk pemilik & pengelola",
+    desc: "Semua aset yang pernah diperiksa — situs dan aplikasi — dalam satu daftar ringkas, tiap aset dengan postur terakhirnya.",
+  },
+  {
+    href: "/jadwal",
+    icon: ICONS.clock,
+    title: "Penjadwal Re-scan",
+    tag: "Untuk pemilik & pengelola",
+    desc: "Pindai ulang aset web Anda secara berkala dan dapatkan tanda bila keamanannya memburuk sejak pemeriksaan terakhir.",
   },
 ];
 

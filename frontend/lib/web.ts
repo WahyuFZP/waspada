@@ -75,7 +75,7 @@ export async function verifikasiTemuan(scanId: string, rule: string, judul: stri
   return body as VerifHasil;
 }
 
-export type ScanReq = { target: string; authorized: boolean; periksa_berkas: boolean; delay?: number };
+export type ScanReq = { target: string; authorized: boolean; periksa_berkas: boolean; delay?: number; periksa_tls?: boolean };
 
 export async function scanWeb(req: ScanReq): Promise<WebReport> {
   let res: Response;
@@ -92,6 +92,57 @@ export async function scanWeb(req: ScanReq): Promise<WebReport> {
   if (!res.ok) throw new Error(body.detail ?? `HTTP ${res.status}`);
   return body as WebReport;
 }
+
+// ---- Penjadwal re-scan (#19) ----
+export type Jadwal = {
+  id: string;
+  target: string;
+  host: string;
+  interval_jam: number;
+  dibuat: string;
+  last_run: string | null;
+  last_scan_id: string | null;
+  status: "regresi" | "membaik" | "tetap" | "baru" | "gagal" | null;
+  detail: string | null;
+};
+
+export type JadwalRun = {
+  dijalankan: number;
+  hasil: { target: string; status: string; detail: string; scan_id: string | null }[];
+};
+
+export const listJadwal = () => get<Jadwal[]>("/jadwal");
+
+export async function addJadwal(target: string, interval_jam: number): Promise<Jadwal> {
+  const res = await fetch(`${WEB_API}/jadwal`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ target, authorized: true, interval_jam }), // authorized: digating checkbox wajib di UI
+  });
+  const body: { detail?: string } & Partial<Jadwal> = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail ?? `HTTP ${res.status}`);
+  return body as Jadwal;
+}
+
+export async function delJadwal(id: string): Promise<void> {
+  const res = await fetch(`${WEB_API}/jadwal/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+}
+
+export async function jalankanJadwal(): Promise<JadwalRun> {
+  const res = await fetch(`${WEB_API}/jadwal/jalankan`, { method: "POST" });
+  const body: { detail?: string } & Partial<JadwalRun> = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail ?? `HTTP ${res.status}`);
+  return body as JadwalRun;
+}
+
+export const JADWAL_STATUS_STYLE: Record<string, string> = {
+  regresi: "border-sev-critical/60 bg-sev-critical/15 text-sev-critical",
+  gagal: "border-sev-high/50 bg-sev-high/10 text-sev-high",
+  membaik: "border-siber-bright/50 bg-siber-bright/10 text-siber-bright",
+  baru: "border-siber/40 bg-siber/10 text-siber-bright",
+  tetap: "border-line bg-surface-2 text-ink-muted",
+};
 
 // 5 pita tingkat -> token severity yang sudah ada (lihat severity-badge.tsx)
 export const TINGKAT_STYLE: Record<Tingkat, string> = {

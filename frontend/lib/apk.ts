@@ -39,6 +39,7 @@ export type ScanResult = {
   level_risiko: Level;
   analisa_akhir?: FinalAnalysis; // tidak ada di laporan lama
   konteks_kepatuhan?: { relevansi: string; kanal_lapor: { nama: string; cara: string }[]; disclaimer: string } | null;
+  draf_disclosure?: { subjek: string; badan: string; catatan: string } | null; // draf lapor santun (#18)
   tahap_gagal?: string[]; // tidak ada di laporan lama
   catatan: string;
 };

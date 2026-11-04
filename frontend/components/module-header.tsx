@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/logo-mark";
 
-// nav bersama modul pemeriksa (APK & Web); `active` menyorot modul yang sedang dibuka
-export function ModuleHeader({ active }: { active?: "apk" | "web" }) {
-  const link = (href: string, label: string, key: "apk" | "web") =>
+// nav bersama modul pemeriksa (APK, Web, Inventaris, Jadwal); `active` menyorot modul yang sedang dibuka
+export function ModuleHeader({ active }: { active?: "apk" | "web" | "inventaris" | "jadwal" }) {
+  const link = (href: string, label: string, key: "apk" | "web" | "inventaris" | "jadwal") =>
     `font-data text-xs hover:text-gold ${active === key ? "text-gold" : "text-ink"}`;
   return (
     <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md print:hidden">
@@ -18,6 +18,12 @@ export function ModuleHeader({ active }: { active?: "apk" | "web" }) {
           </Link>
           <Link href="/web" className={link("/web", "Pemeriksa Web", "web")}>
             Pemeriksa Web
+          </Link>
+          <Link href="/inventaris" className={link("/inventaris", "Inventaris Aset", "inventaris")}>
+            Inventaris Aset
+          </Link>
+          <Link href="/jadwal" className={link("/jadwal", "Penjadwal", "jadwal")}>
+            Penjadwal
           </Link>
         </div>
         <Link href="/pemantauan" className="font-data text-xs text-ink-muted hover:text-ink">
