@@ -74,6 +74,18 @@ def test_suricata_rejects_bad_ip_and_kev_matches_assets():
     assert [(m["host"], m["cve"]) for m in match_kev(vulns, load_assets()["hosts"], "2026-10-22T00:00:00Z")] == [("fw-01", "CVE-2024-21762")]
 
 
+def test_suricata_host_prefers_inventory_then_sensor_then_dest_ip():
+    from normalize import parse_ts
+    from parsers import load_assets, parse_suricata
+    base = {"event_type": "alert", "timestamp": "2026-11-04T02:00:00.123456+0000", "src_ip": "172.18.0.9",
+            "alert": {"signature": "WASPADA SCAN"}}
+    host = lambda **kw: parse_suricata({**base, **kw}, parse_ts, load_assets())[0]["host"]  # noqa: E731
+    assert host(dest_ip="10.10.1.20", host="sensor-a") == "srv-web-01"
+    assert host(dest_ip="172.18.0.4", host="srv-latihan") == "srv-latihan"
+    assert host(dest_ip="172.18.0.4") == "172.18.0.4"
+    assert host(dest_ip="172.18.0.4", host=123) == "172.18.0.4"
+
+
 def test_intrusion_scenario_correlates_kev_ids_and_auth():
     severities = []
     for line in (SCENARIO.parent / "intrusi.jsonl").read_text(encoding="utf-8").splitlines():
@@ -82,7 +94,8 @@ def test_intrusion_scenario_correlates_kev_ids_and_auth():
         new = {a["id"]: a for a in client.get("/alerts").json()}
         severities += [(new[i]["rule"], new[i]["severity"]) for i in r.json()["alerts"]]
     assert severities == [("Pemindaian port", "medium"), ("Eksploitasi pada aset rentan KEV", "high"),
-                          ("Brute force berhasil masuk", "high"), ("Intrusi berhasil pada aset rentan", "critical")]
+                          ("Brute force berhasil masuk", "high"), ("Intrusi berhasil pada aset rentan", "critical"),
+                          ("Pemindaian diikuti login berhasil", "critical")]
 
     # brute force & intrusi punya timestamp sama, jadi cari berdasarkan nama rule, bukan posisi
     critical = next(a for a in client.get("/alerts").json() if a["rule"] == "Intrusi berhasil pada aset rentan")

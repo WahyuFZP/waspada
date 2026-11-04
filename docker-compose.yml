@@ -63,22 +63,36 @@ services:
     ports: ["127.0.0.1:2222:22"]
     volumes: ["demolog:/var/log/waspada"]
 
+  # Sensor IDS sungguhan: berbagi jaringan dengan ssh-target, jadi melihat semua paket yang masuk ke server itu.
+  # Bila ssh-target dibuat ulang, jalankan ulang juga: docker compose restart suricata
+  suricata:
+    image: jasonish/suricata:8.0.7
+    network_mode: service:ssh-target
+    command: -c /waspada/suricata.yaml --af-packet=eth0 -k none
+    cap_add: [NET_ADMIN, NET_RAW, SYS_NICE]
+    volumes:
+      - ./demo/suricata:/waspada:ro  # bukan /etc/suricata: entrypoint image melakukan chown di sana
+      - idslog:/var/log/suricata
+    depends_on: [ssh-target]
+
   # Pengirim log: skrip yang sama dengan yang dipasang di server satuan (shipper/waspada_shipper.py)
   log-shipper:
     image: python:3.12-alpine
-    command: python /app/waspada_shipper.py --api http://backend:8000 --auth /logs/auth.log
+    command: python /app/waspada_shipper.py --api http://backend:8000 --auth /logs/auth.log --suricata /ids/eve.json
     environment:
       INGEST_TOKEN: ${INGEST_TOKEN:-}
       PYTHONUNBUFFERED: "1"
     volumes:
       - ./shipper:/app:ro
       - demolog:/logs:ro
+      - idslog:/ids:ro
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    depends_on: [backend, ssh-target]
+    depends_on: [backend, ssh-target, suricata]
 
 volumes:
   pgdata:
   apkdata:
   demolog:
+  idslog:

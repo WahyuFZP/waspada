@@ -21,7 +21,7 @@ Satu record atau array record. Field `kind` memilih parser. Satu record tidak va
 |---|---|---|
 | `news` (default) | `timestamp`, `source`, `region` (`domestic`/`foreign`), `title`; opsional `summary`, `url` (hanya `http`/`https`) | RSS media (`rss.py`) |
 | `auth` | `line` (satu baris `auth.log` sshd); opsional `timestamp` | Log SSH server satuan |
-| `suricata` | Satu baris `eve.json` dengan `event_type: "alert"`, `alert.signature`, `src_ip`, `dest_ip`; opsional `dest_port`, `alert.metadata.cve` | Sensor IDS Suricata |
+| `suricata` | Satu baris `eve.json` dengan `event_type: "alert"`, `alert.signature`, `src_ip`, `dest_ip`; opsional `dest_port`, `alert.metadata.cve`, `host` (dari `sensor-name`; dipakai bila `dest_ip` tidak ada di `assets.yaml`) | Sensor IDS Suricata |
 | `kev` | `timestamp`, `host`, `cve`, `vendor`, `product`; opsional `ransomware` | Dibuat oleh `kev.py` (CISA KEV × `assets.yaml`) |
 
 Field `demo: true` menandai data simulasi (dari `replay.py`); dashboard melabelinya "Simulasi".

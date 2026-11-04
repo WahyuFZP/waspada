@@ -19,6 +19,7 @@ flowchart LR
     SC[apk-scanner<br/>FastAPI, Python 3.11<br/>:8001]
     SQ[(SQLite + JSON<br/>volume apkdata)]
     ST[ssh-target<br/>server SSH latihan :2222]
+    IDS[suricata<br/>sensor IDS]
     LS[log-shipper<br/>waspada_shipper.py]
   end
 
@@ -30,6 +31,7 @@ flowchart LR
   KEV --> BE
   LOG -- X-Ingest-Token --> BE
   ST -- auth.log, volume demolog --> LS -- POST /ingest --> BE
+  ST -- paket jaringan --> IDS -- eve.json, volume idslog --> LS
   BE <--> DB
   BE -- SSE /stream --> FE
   BE --> DC
@@ -44,7 +46,8 @@ flowchart LR
 | `backend` | Python 3.12, FastAPI | 127.0.0.1:8000 | Ingest, normalisasi, GeoIP, korelasi, notifikasi, SSE |
 | `apk-scanner` | Python 3.11, FastAPI, Androguard 4.1.4, APKiD 3.2.0 | 127.0.0.1:8001 | Analisis statis APK |
 | `ssh-target` | Alpine, OpenSSH | 127.0.0.1:2222 | Server latihan untuk demo; menulis `auth.log` asli ke volume `demolog`. Login berhasil tidak mendapat shell |
-| `log-shipper` | Python 3.12, hanya stdlib | - | Membaca `auth.log` server latihan seperti `tail -F` dan mengirimnya ke `/ingest` |
+| `suricata` | Suricata 8.0.7 | - | Sensor IDS yang berbagi jaringan dengan `ssh-target`; menulis alert ke `eve.json` di volume `idslog` |
+| `log-shipper` | Python 3.12, hanya stdlib | - | Membaca `auth.log` dan `eve.json` server latihan seperti `tail -F` dan mengirimnya ke `/ingest` |
 | dashboard | Next.js 15, React 19, Tailwind 4, motion, anime.js | 3000 (`npm run dev`) | Landing, `/pemantauan`, `/log`, `/apk` |
 
 ## 2. Pemantauan SIEM
