@@ -9,6 +9,7 @@ muatan serangan. Cek aktif (ZAP/Nuclei) adalah tahap lanjut, bukan bagian MVP pa
 import argparse
 import json
 import sys
+from urllib.parse import urlsplit
 
 import ci
 import fetch
@@ -16,6 +17,8 @@ import final
 import report
 import rules
 import scoring
+import siem
+import tls
 from scope import OutOfScope, authorize
 
 
@@ -32,6 +35,8 @@ def main(argv=None):
     ap.add_argument("--sarif", metavar="FILE", help="tulis temuan sebagai SARIF 2.1.0 ke FILE")
     ap.add_argument("--baseline", metavar="FILE", help="laporan JSON acuan; gerbang hanya pada temuan BARU")
     ap.add_argument("--operator", help="label operator untuk rekaman otorisasi/audit (opsional)")
+    ap.add_argument("--tls", action="store_true",
+                    help="probe TLS lanjutan (AKTIF: buka beberapa handshake; hanya aset milik/berizin)")
     a = ap.parse_args(argv)
 
     try:
@@ -41,9 +46,16 @@ def main(argv=None):
 
     obs = fetch.observe(base, host, delay=a.delay, cek_exposed=not a.no_exposed)
     findings = rules.evaluate(obs)
+    errors = obs.get("errors", [])
+    if a.tls:  # #20 probe TLS AKTIF, opt-in
+        temuan_tls, catatan = tls.probe(host, urlsplit(base).port or 443)
+        findings += temuan_tls
+        if catatan:
+            errors.append(catatan)
     nilai = scoring.nilai(findings)
     akhir = final.conclude(findings, nilai)
-    rep = report.build(base, findings, nilai, akhir, obs.get("errors", []), a.operator)
+    rep = report.build(base, findings, nilai, akhir, errors, a.operator)
+    siem.kirim(rep)  # #16 jembatan ke SIEM (opt-in via SIEM_INGEST_URL, fail-safe)
 
     if a.sarif:
         with open(a.sarif, "w", encoding="utf-8") as fh:

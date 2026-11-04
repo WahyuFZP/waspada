@@ -25,6 +25,10 @@ def authorize(target, authorized):
     u = urlsplit(target if "://" in target else "https://" + target)
     if u.scheme not in ("http", "https") or not u.hostname:
         raise OutOfScope(f"target tidak sah: {target!r}")
+    try:
+        u.port  # memicu validasi port (ValueError bila di luar 0-65535 / bukan angka) sebelum dipakai di tls.probe
+    except ValueError:
+        raise OutOfScope(f"port target tidak sah: {target!r}")
     return f"{u.scheme}://{u.netloc}", u.hostname
 
 
