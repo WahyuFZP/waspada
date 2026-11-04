@@ -1,0 +1,9 @@
+{
+  "_catatan": "Sidik jari SHA-256 sertifikat penandatangan RESMI per package merek, untuk rule R25 (deteksi repackage-and-resign). WAJIB diisi dari sumber TERVERIFIKASI (APK resmi Google Play atau situs penerbit) - entri keliru bisa salah menandai aplikasi asli sebagai palsu. R25 hanya aktif untuk package yang daftar sidik jarinya TIDAK kosong, jadi aman dibiarkan kosong sampai terverifikasi. Boleh berisi lebih dari satu sidik jari (rotasi kunci / Play App Signing). Format: heksadesimal, titik dua & spasi diabaikan, huruf besar/kecil bebas.",
+  "pin": {
+    "id.co.bri.brimo": [],
+    "id.dana": [],
+    "com.bca": [],
+    "com.gojek.app": []
+  }
+}

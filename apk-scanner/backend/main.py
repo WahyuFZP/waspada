@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 
+import diff
 import final
 import packer
 import parser as apk_parser
@@ -88,3 +89,12 @@ def get_scan(scan_id: str):
     if not r:
         raise HTTPException(404, "scan tidak ditemukan")
     return r
+
+
+@app.get("/scans/{scan_id}/diff")
+def diff_scan(scan_id: str, vs: str):
+    """Perubahan scan_id (baru) dibanding vs (lama): temuan BARU/HILANG/TETAP + delta skor. Read-only."""
+    baru, lama = db.get(scan_id), db.get(vs)
+    if not baru or not lama:
+        raise HTTPException(404, "scan tidak ditemukan")
+    return diff.diff(lama, baru)

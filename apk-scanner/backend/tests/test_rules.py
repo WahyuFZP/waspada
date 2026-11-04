@@ -140,10 +140,48 @@ def test_anti_analysis_needs_three_categories_for_sedang():
     assert g.bobot == 30
 
 
-def test_common_capabilities_each_score_sedang_and_stack():
-    # pilihan sensitivitas PRD v1.3: .so, FCM, dan identitas perangkat masing-masing 30 (Sedang) dan menumpuk —
-    # aplikasi Flutter + Firebase + analitik yang sah mencapai 90 (Tinggi). Turunkan bila false positive terasa.
+def test_common_capabilities_are_flagged_capability():
+    # .so, FCM, identitas: bobot mentah 30 masing-masing, TAPI ditandai kapabilitas=True agar scoring (#4)
+    # membatasinya -> sendirian tetap "Rendah", bukan "Tinggi" (lihat tests/test_scoring.py).
     fcm = {"type": "service", "name": "a.Fcm", "permission": None, "actions": ["com.google.firebase.MESSAGING_EVENT"]}
     found = evaluate(parsed(components=[fcm], texts=["android_id"], arsip={"native": ["lib/arm64-v8a/libx.so"]}), NO_PACKER)
     assert [(f.rule_id, f.tingkat, f.bobot) for f in found] == [("R21", "sedang", 30), ("R22", "sedang", 30), ("R23", "sedang", 30)]
-    assert sum(f.bobot for f in found) == 90  # -> Tinggi
+    assert all(f.kapabilitas for f in found)
+
+
+def test_r25_signer_mismatch_on_official_package(monkeypatch):
+    import rules
+    monkeypatch.setattr(rules, "SIGNER_PINS", {"id.dana": ["aa" * 32]})
+    # package resmi + label normal + release-signed ULANG dgn kunci lain -> MISS R13, ditangkap R25
+    p = parsed(package="id.dana", manifest={"label": "DANA"},
+               sertifikat={"skema": ["v2"], "debug": False, "sha256": "BB" * 32})
+    assert {f.rule_id for f in evaluate(p, NO_PACKER)} == {"R25"}  # R13 tak fire (identitas cocok, bukan debug)
+
+
+def test_r25_official_signer_cancels_impersonation(monkeypatch):
+    import rules
+    monkeypatch.setattr(rules, "SIGNER_PINS", {"id.dana": ["aa" * 32]})
+    # label homoglyph biasanya memicu R13; sidik jari = penerbit resmi -> peniruan dibatalkan, tak ada R25
+    p = parsed(package="id.dana", manifest={"label": "ДANA"},
+               sertifikat={"skema": ["v2"], "debug": False, "sha256": "AA" * 32})
+    assert "R13" not in ids(p) and "R25" not in ids(p)
+
+
+def test_r25_dormant_without_curated_pin(monkeypatch):
+    import rules
+    monkeypatch.setattr(rules, "SIGNER_PINS", {})  # belum ada kurasi -> R25 tak pernah menilai
+    p = parsed(package="id.dana", manifest={"label": "DANA"},
+               sertifikat={"skema": ["v2"], "debug": False, "sha256": "cc" * 32})
+    assert "R25" not in ids(p)
+
+
+def test_edukasi_card_attached_by_rule_id():
+    rcv = {"type": "receiver", "name": ".Sms", "permission": None, "actions": ["android.provider.Telephony.SMS_RECEIVED"]}
+    [f] = [x for x in evaluate(parsed(["RECEIVE_SMS"], [rcv]), NO_PACKER) if x.rule_id == "R01"]
+    assert set(f.edukasi) == {"apa", "kenapa", "dampak"} and "SMS" in f.edukasi["apa"]
+
+
+def test_corrupt_manifest_flag_triggers_r24():
+    [f] = evaluate(parsed(manifest_rusak=True), NO_PACKER)
+    assert (f.rule_id, f.tingkat, f.bobot) == ("R24", "sedang", 20)
+    assert "R24" not in ids(parsed())  # manifest normal: tidak terpicu

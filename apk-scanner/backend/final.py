@@ -123,6 +123,10 @@ def conclude(parsed, packer, findings, level):
         alasan.append("Sebagian kode disembunyikan, jadi isi sebenarnya mungkin tidak terlihat.")
     if parsed["galat"]:
         alasan.append("Sebagian tahap pemeriksaan gagal; kesimpulan ini belum lengkap.")
+    kapabilitas = [f for f in findings if f.kapabilitas]
+    if kapabilitas:  # kelompok "perlu konteks": lazim di app sah, bukan vonis (scoring membatasinya, #4)
+        alasan.append("Kapabilitas umum terdeteksi (" + ", ".join(f.rule_id for f in kapabilitas) +
+                      "): lazim di aplikasi sah seperti Flutter/Firebase/analitik, jadi konteks, bukan indikasi berbahaya.")
     if not alasan:
         alasan.append("Tidak ada aturan deteksi yang terpicu.")
     if intel["status"] == "tidak_ditemukan":

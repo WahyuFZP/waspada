@@ -146,14 +146,21 @@ def _arsip(path):
 
 
 def parse(path):
-    """Path APK yang sudah lolos validator -> dict hasil ekstraksi."""
-    a = APK(path)
-    xml = a.get_android_manifest_xml()
-
-    package = a.get_package()
+    """Path APK yang sudah lolos validator -> dict hasil ekstraksi. Init APK/manifest diisolasi: manifest
+    rusak tidak membatalkan scan, hanya menyisakan sinyal tingkat-arsip + tanda manifest_rusak (rule R24)."""
+    galat = []
+    try:
+        a = APK(path)
+        xml = a.get_android_manifest_xml()
+        package = a.get_package()
+    except Exception as exc:  # manifest rusak/disengaja: jangan batalkan scan, lanjut ke jalur zip-only
+        a, xml, package = None, None, None
+        galat.append(f"Manifest APK: {type(exc).__name__}: {exc}")
+    manifest_rusak = xml is None
+    if manifest_rusak and not galat:  # APK terbaca tapi manifest kosong/None tanpa melempar
+        galat.append("Manifest APK: AndroidManifest.xml tidak terbaca (kosong atau rusak).")
     # manifest boleh memakai nama relatif (".Update" atau "Update"); lengkapi dengan package seperti Android
     full = lambda n: n if not n or ("." in n and not n.startswith(".")) else f"{package}{n if n.startswith('.') else '.' + n}"
-    galat = []
 
     def stage(nama, fn, kosong=list):
         """Seperti MobSF: tahap yang gagal dicatat di laporan, tahap lain tetap berjalan."""
@@ -192,19 +199,25 @@ def parse(path):
                                          if IP_ONLY_RE.fullmatch(s) and (":" in s or int(s.split(".")[0]) >= 10)]
     ips = sorted({ip for ip in candidates if IPV4_RE.fullmatch(ip) and all(int(p) <= 255 for p in ip.split("."))})
 
-    permissions = sorted(set(a.get_permissions()))
+    permissions = stage("Izin", lambda: sorted(set(a.get_permissions())))
     signer = stage("Sertifikat", lambda: _signer(a), kosong=dict)
     manifest = stage("Atribut manifest", lambda: _manifest(a, xml, full), kosong=dict)
     nsc = stage("Network security config", lambda: _nsc(path), kosong=dict)
     arsip = stage("Isi arsip", lambda: _arsip(path), kosong=dict)
-
-    return {
-        "sha256": sha256_file(path),
-        "package": package,
+    versi = stage("Versi & SDK", lambda: {
         "version_name": a.get_androidversion_name(),
         "version_code": _int(a.get_androidversion_code()),
         "min_sdk": _int(a.get_min_sdk_version()),
         "target_sdk": _int(a.get_target_sdk_version()),
+    }, kosong=dict)
+
+    return {
+        "sha256": sha256_file(path),
+        "package": package,
+        "version_name": versi.get("version_name"),
+        "version_code": versi.get("version_code"),
+        "min_sdk": versi.get("min_sdk"),
+        "target_sdk": versi.get("target_sdk"),
         "permissions": permissions,
         "dangerous_permissions": [p for p in permissions if p in DANGEROUS],
         "components": components,
@@ -215,5 +228,6 @@ def parse(path):
         "manifest": manifest,  # untuk rule; tidak ikut ke laporan (seperti texts)
         "nsc": nsc,
         "arsip": arsip,
+        "manifest_rusak": manifest_rusak,
         "galat": galat,
     }

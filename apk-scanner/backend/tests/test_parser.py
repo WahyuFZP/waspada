@@ -80,3 +80,24 @@ def test_version_numbers_are_not_ips(benign_apk, monkeypatch):
 
     monkeypatch.setattr(parser_mod, "DEX", FakeDex)
     assert parse(benign_apk("com.politedroid_4.apk"))["ips"] == ["107.155.52.31", "3.1.8.100"]
+
+
+def test_corrupt_manifest_falls_back_to_archive_scan(tmp_path, monkeypatch):
+    # manifest rusak tidak boleh membatalkan scan: arsip (EICAR/native/dll) tetap diperiksa, dan jadi tanda R24
+    import zipfile
+    import parser as parser_mod
+
+    def boom(_):
+        raise Exception("AXML rusak")
+
+    monkeypatch.setattr(parser_mod, "APK", boom)
+    apk = tmp_path / "rusak.apk"
+    with zipfile.ZipFile(apk, "w") as z:
+        z.writestr("AndroidManifest.xml", b"ini bukan AXML")
+        z.writestr("classes.dex", b"dex\n035\x00")
+        z.writestr("assets/payload.txt", parser_mod.EICAR)
+    p = parser_mod.parse(str(apk))
+    assert p["manifest_rusak"] is True
+    assert p["package"] is None and p["permissions"] == [] and p["components"] == []
+    assert any(g.startswith("Manifest APK") for g in p["galat"])
+    assert "assets/payload.txt" in p["arsip"]["eicar"]  # muatan tetap terbaca walau manifest gagal

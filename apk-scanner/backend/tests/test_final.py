@@ -55,3 +55,12 @@ def test_high_level_is_dangerous_and_lists_high_findings(monkeypatch):
     f = Finding("R11", "Mengirim data ke bot Telegram", "tinggi", 30)
     r = final.conclude(parsed(), {}, [f], "Tinggi")
     assert r["status"] == "Berbahaya" and "Mengirim data ke bot Telegram (R11)." in r["alasan"]
+
+
+def test_capability_findings_are_context_not_danger(monkeypatch):
+    monkeypatch.delenv("ABUSECH_AUTH_KEY", raising=False)
+    caps = [Finding("R21", "native", "sedang", 30, kapabilitas=True),
+            Finding("R23", "identitas", "sedang", 30, kapabilitas=True)]
+    r = final.conclude(parsed(), {}, caps, "Rendah")
+    assert r["status"] == "Tidak ditemukan indikasi berbahaya"
+    assert any("Kapabilitas umum" in a for a in r["alasan"])

@@ -1,9 +1,12 @@
 """Rule engine MVP (PRD v1.1 §7). Setiap rule hanya menghasilkan Finding bila terpicu, lengkap dengan bukti."""
 import ipaddress
+import json
+import os
 import re
 import unicodedata
 from urllib.parse import urlsplit
 
+import edukasi
 from models import Finding
 
 P = "android.permission."
@@ -20,6 +23,20 @@ BRAND_PACKAGES = {
     "com.tokopedia.tkpd": "Tokopedia", "com.whatsapp": "WhatsApp", "org.telegram.messenger": "Telegram",
 }
 BRAND_TOKENS = {re.sub(r"[^a-z0-9]", "", nama.split()[0].lower()): pkg for pkg, nama in BRAND_PACKAGES.items()}
+
+
+def _muat_pin_penandatangan():
+    """Sidik jari SHA-256 penandatangan RESMI per package (R25). Berkas boleh kosong/absen -> R25 dorman.
+    Sidik jari dinormalkan (titik dua/spasi dibuang, huruf kecil) saat dimuat."""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "signer_resmi.json"), encoding="utf-8") as fh:
+            return {pkg: [s.replace(":", "").replace(" ", "").lower() for s in sidik]
+                    for pkg, sidik in json.load(fh).get("pin", {}).items()}
+    except (OSError, ValueError):
+        return {}
+
+
+SIGNER_PINS = _muat_pin_penandatangan()
 # Huruf Cyrillic/Yunani yang tampak sama dengan Latin, dipetakan balik agar label "ВRImo" terbaca "BRImo"
 CONFUSABLE = str.maketrans(
     "АВЕКМНОРСТХаеорсухіѕј"
@@ -188,6 +205,26 @@ def evaluate(p, packer):
             "Nama package, label, atau tanda tangan tidak cocok dengan aplikasi resmi yang ditirunya: pola 'update "
             "BRImo/DANA' palsu yang disebar lewat WhatsApp. Cocokkan penerbit dengan yang tercantum di Google Play.")
 
+    # R25: tanda tangan tak cocok penerbit resmi (repackage-and-resign) — menutup MISS R13 saat package & label
+    # benar tapi APK ditandatangani ULANG. Hanya menilai merek yang sidik jarinya sudah dikurasi (pin tak kosong).
+    pin = SIGNER_PINS.get(official or "", [])
+    if official and pin:
+        observed = (cert.get("sha256") or "").replace(":", "").replace(" ", "").lower()
+        if observed and observed not in pin:
+            hit("R25", f"Tanda tangan tidak cocok dengan penerbit resmi {BRAND_PACKAGES[official]}", "tinggi", 50,
+                [f"sidik jari teramati {observed[:16]}… tidak ada di daftar penandatangan resmi {BRAND_PACKAGES[official]}"],
+                "Package memakai identitas aplikasi resmi tetapi ditandatangani kunci yang BUKAN milik penerbit: ciri "
+                "khas APK yang dibongkar lalu ditandatangani ulang ('update palsu'). Hanya pasang dari Google Play.")
+        elif observed:  # sidik jari cocok penerbit resmi: bukti kuat asli -> batalkan kecurigaan peniruan (R13)
+            found[:] = [fnd for fnd in found if fnd.rule_id != "R13"]
+
+    # R24: manifest tidak terbaca padahal arsip utuh. Bisa korupsi biasa, bisa juga teknik agar pemeriksa menyerah.
+    if p.get("manifest_rusak"):
+        hit("R24", "Manifest tidak terbaca (mungkin sengaja dirusak)", "sedang", 20,
+            [g for g in p.get("galat", []) if g.startswith("Manifest")] or ["AndroidManifest.xml gagal diurai"],
+            "AndroidManifest.xml tidak dapat dibaca walau arsip utuh. Bisa kerusakan biasa, tapi juga teknik agar "
+            "pemeriksa menyerah sementara muatan (DEX/native/aset) tetap ada; sinyal tingkat-arsip tetap diperiksa.")
+
     # R14-R16: isi arsip. Muatan yang disamarkan sebagai gambar / diselipkan di assets (dropper), EICAR, jejak apktool.
     ar = p.get("arsip") or {}
     muatan = ar.get("payload_tersamar", []) + ar.get("payload_eksekusi", [])
@@ -251,16 +288,17 @@ def evaluate(p, packer):
     if ar.get("native"):
         hit("R21", "Memuat pustaka native (.so)", "sedang", 30, ar["native"][:10],
             "Kode native tidak terlihat oleh pemeriksaan DEX, jadi perilaku sebenarnya bisa tersembunyi di sini. "
-            "Wajar di aplikasi Flutter/game; periksa bersama temuan lain.")
+            "Wajar di aplikasi Flutter/game; periksa bersama temuan lain.", kapabilitas=True)
     fcm = [c["name"] for c in p["components"] if c["type"] == "service" and FCM_EVENT in c["actions"]]
     if fcm:
         hit("R22", "Menerima pesan push Firebase (FCM)", "sedang", 30, fcm,
             "Kanal push bisa dipakai pelaku untuk mengirim perintah ke aplikasi setelah terpasang (C2), meski juga "
-            "dipakai hampir semua aplikasi sah.")
+            "dipakai hampir semua aplikasi sah.", kapabilitas=True)
     ident = sorted(set(DEVICE_ID) & t)
     if ident:
         hit("R23", "Membaca identitas perangkat", "sedang", 30, ident,
-            "ANDROID_ID/IMEI dipakai untuk mengenali korban di server pelaku, tetapi juga oleh analitik aplikasi sah.")
+            "ANDROID_ID/IMEI dipakai untuk mengenali korban di server pelaku, tetapi juga oleh analitik aplikasi sah.",
+            kapabilitas=True)
 
     combo = [f.rule_id for f in found if f.rule_id in {"R01", "R02", "R03", "R04", "R10", "R12"}]
     if len(combo) >= 2:
@@ -268,4 +306,6 @@ def evaluate(p, packer):
             "Masing-masing izin bisa wajar, tetapi gabungannya cocok dengan pola aplikasi pencuri OTP dan data "
             "perbankan.")
 
+    for f in found:  # lampirkan kartu edukasi "Pelajari dulu" per rule_id (#8)
+        f.edukasi = edukasi.EDUKASI.get(f.rule_id, {})
     return sorted(found, key=lambda f: f.rule_id)
