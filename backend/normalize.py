@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 
 import yaml
 
+import geoip
 import parsers
 
 REGIONS = {"domestic", "foreign"}
@@ -39,8 +40,10 @@ def normalize(article, topics, assets=None):
             events = parsers.parse_kev(article, parse_ts)
         else:
             raise ValueError(f"kind tidak dikenal: {kind!r}")
-        # penanda data simulasi supaya dashboard bisa melabelinya dan data demo mudah dihapus
-        return [{**e, "demo": bool(article.get("demo"))} for e in events]
+        # penanda data simulasi supaya dashboard bisa melabelinya dan data demo mudah dihapus;
+        # geo = negara & pemilik jaringan IP sumber (offline, lihat geoip.py)
+        return [{**e, "demo": bool(article.get("demo")), **({"geo": geoip.lookup(e["src_ip"])} if e.get("src_ip") else {})}
+                for e in events]
 
     for field in ("timestamp", "source", "region", "title"):
         if not article.get(field):

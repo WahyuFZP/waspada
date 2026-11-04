@@ -58,7 +58,7 @@ Contoh: "Sambungan ke server pemantauan terputus. Sistem akan menyambung ulang s
 
 Gerak hanya menandai kejadian atau status nyata. Satu-satunya gerak berulang adalah paket di jaring hero, dan itu hanya berjalan saat stream terhubung. Semua dimatikan bila pengguna memilih *reduce motion*.
 
-Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/signal-lines.tsx`) di landing, dashboard, dan Pemeriksa APK. Garis pendek melintas acak di jalur horizontal/vertikal kelipatan 5%, menggambarkan sinyal dari banyak sumber yang diolah WASPADA (*Wide-Area Signal Processing*). Hijau = sinyal, emas = paket data. Opasitas 0,45 di belakang semua panel agar teks tetap terbaca; tidak dirender saat *reduce motion*.
+Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/signal-lines.tsx`) di landing, dashboard, Log keamanan, dan Pemeriksa APK. Garis pendek melintas acak di jalur horizontal/vertikal kelipatan 5%, menggambarkan sinyal dari banyak sumber yang diolah WASPADA (*Wide-Area Signal Processing*). Hijau = sinyal, emas = paket data. Opasitas 0,45 di belakang semua panel agar teks tetap terbaca; tidak dirender saat *reduce motion*.
 
 | Kejadian | Gerak |
 |---|---|
@@ -74,6 +74,9 @@ Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/
 | Landing dibuka | Kentongan 3D berayun sekali lalu diam, seperti baru dipukul: peringatan dibunyikan |
 | APK sedang diunggah/dianalisis | Garis pindai bergerak di layar ponsel 3D dan titik di kartu berkedip; diam saat tidak ada proses |
 | Halaman Pemeriksa APK terbuka | Lima kartu pemeriksaan (izin, sertifikat, URL dan domain, kode tersembunyi, judi online) terus keluar-masuk dari layar ponsel bergantian. Isinya apa yang diperiksa, bukan hasil: halaman unggah belum punya hasil scan |
+| Baris log baru di `/log` | Meluncur masuk dari atas dengan sorotan emas yang memudar 2,2 detik; baris lain bergeser (layout) |
+| Grafik log per menit | Tinggi batang menyesuaikan dengan spring saat log masuk; tooltip rincian saat hover |
+| Pengirim log aktif (log dalam 5 menit) | Titik hijau berdenyut di "Sumber log"; diam dan abu-abu bila pengirim berhenti |
 | Hasil scan dibuka | Skor naik dari 0 ke nilainya (akumulasi bobot aturan). Dimulai di frame pertama agar angka asli tetap tampil bila browser belum menggambar |
 
 ## Motif 3D: perangkat fisik

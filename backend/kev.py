@@ -7,6 +7,7 @@ Polling ulang aman: event per (CVE, host) punya url unik sehingga /ingest membua
 import argparse
 import json
 import logging
+import os
 from datetime import datetime, timezone
 
 import httpx
@@ -50,7 +51,7 @@ def main():
     assets = load_assets()
     records = [{**r, "demo": assets["demo"]} for r in match_kev(catalog["vulnerabilities"], assets["hosts"], now)]
     logging.info("KEV %s: %d CVE, %d cocok dengan aset", catalog.get("dateReleased"), len(catalog["vulnerabilities"]), len(records))
-    r = httpx.post(f"{args.api}/ingest", json=records, timeout=60)
+    r = httpx.post(f"{args.api}/ingest", json=records, timeout=60, headers={"X-Ingest-Token": os.environ.get("INGEST_TOKEN", "")})
     r.raise_for_status()
     logging.info("ingest -> %s", r.json())
 
