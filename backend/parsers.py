@@ -6,6 +6,7 @@ import ipaddress
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import yaml
 
@@ -118,5 +119,32 @@ def parse_kev(record, parse_ts):
                  + f". Aset {record['host']} memakai produk ini, perlu verifikasi versi.",
         # url per host supaya polling ulang kev.py tidak menggandakan event (dedupe by url di /ingest)
         "url": f"https://nvd.nist.gov/vuln/detail/{cve}#{record['host']}",
+        "raw": record,
+    }]
+
+
+def parse_scanner(record, parse_ts):
+    """Ringkasan temuan dari pemeriksa WASPADA (apk/web), dikirim hook pasca-scan. Satu event per scan (#16)."""
+    for field in ("timestamp", "scanner", "host", "severity", "title"):
+        if not record.get(field):
+            raise ValueError(f"record scanner butuh field {field}")
+    sev = str(record["severity"]).lower()
+    if sev not in ("low", "medium", "high", "critical"):
+        raise ValueError(f"severity scanner tidak valid: {sev!r}")
+    scanner = str(record["scanner"]).lower()
+    if scanner not in ("apk", "web"):
+        raise ValueError(f"scanner tidak dikenal: {scanner!r}")
+    if record.get("url") and urlsplit(str(record["url"])).scheme not in ("http", "https"):
+        raise ValueError("url scanner harus http(s)")
+    return [{
+        "timestamp": _iso(parse_ts(record["timestamp"])),
+        "source": f"scanner_{scanner}",
+        "event_type": "scanner.finding",
+        "severity": sev,
+        "host": str(record["host"]),
+        "title": str(record["title"]),
+        "url": record.get("url"),
+        "temuan": record.get("temuan", []),
+        "saran": record.get("saran", []),
         "raw": record,
     }]

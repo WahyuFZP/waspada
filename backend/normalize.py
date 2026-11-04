@@ -37,6 +37,8 @@ def normalize(article, topics, assets=None):
             events = parsers.parse_suricata(article, parse_ts, assets or {"by_ip": {}})
         elif kind == "kev":
             events = parsers.parse_kev(article, parse_ts)
+        elif kind == "scanner":
+            events = parsers.parse_scanner(article, parse_ts)
         else:
             raise ValueError(f"kind tidak dikenal: {kind!r}")
         # penanda data simulasi supaya dashboard bisa melabelinya dan data demo mudah dihapus
