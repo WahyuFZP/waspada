@@ -51,6 +51,27 @@ services:
     cpus: 2
     pids_limit: 256
 
+  # Pemeriksa Keamanan Web (pasif): mengambil respons target lalu mengamatinya. Beda dari apk-scanner,
+  # service ini butuh egress jaringan. Untuk memindai localhost laptop, jalankan LOKAL (bukan Docker):
+  # di dalam container "localhost" adalah container itu sendiri, bukan host.
+  web-scanner:
+    build: ./web-scanner/backend
+    environment:
+      DATA_DIR: /data
+    ports: ["127.0.0.1:8002:8000"]
+    volumes:
+      - ./web-scanner/backend:/app:ro
+      - webdata:/data
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    cpus: 1
+    pids_limit: 128
+
 volumes:
   pgdata:
   apkdata:
+  webdata:
