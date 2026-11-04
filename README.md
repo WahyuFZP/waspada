@@ -3,6 +3,8 @@
 **W**ide-**A**rea **S**ignal **P**rocessing for **A**lerting and **D**omain **A**wareness: pengolahan sinyal area luas
 untuk peringatan dan kesadaran domain siber. Dua modul: Pemantauan SIEM (di bawah) dan [Pemeriksa APK](#pemeriksa-apk).
 
+Dokumentasi teknis: [ARCHITECTURE.md](ARCHITECTURE.md) (layanan dan alur data) · [SCHEMA.md](SCHEMA.md) (bentuk data dan tabel).
+
 SIEM ringan yang mengorelasikan **log keamanan internal**, **intelijen ancaman terbuka (CISA KEV)**, dan **OSINT berita** dalam satu pipeline: **ingest → normalisasi → korelasi → alert**.
 Satu kejadian tampak biasa; rangkaiannya lintas sumber adalah ancaman.
 
@@ -14,6 +16,7 @@ Semua data demo **sintetis** (`demo: true`, tampil berlabel "Simulasi") atau ber
 |---|---|---|
 | Ingest | `backend/app.py` (`POST /ingest`), `rss.py`, `kev.py`, `replay.py` | Record masuk via HTTP; field `kind` memilih parser |
 | Normalisasi | `backend/normalize.py`, `backend/parsers.py`, `topics.yaml`, `assets.yaml` | Semua sumber → satu skema event (lihat di bawah) |
+| GeoIP | `backend/geoip.py`, `geoip_fetch.py` | IP sumber diberi negara & pemilik jaringan dari DB-IP Lite (CC BY 4.0), dibaca offline |
 | Korelasi | `backend/engine.py` + `rules.yaml` | Sliding window per `group_by`, rule = urutan langkah (threshold / sequence / cross-source), plus teknik MITRE ATT&CK |
 | Output | `backend/notify.py`, `backend/store.py` (PostgreSQL, JSONB), SSE | Discord webhook, tabel `alerts`, stream real-time ke dashboard |
 
@@ -64,8 +67,8 @@ Berita memakai `region` dan `topic` sebagai pengganti `host`/`src_ip`.
 
 | Method | Path | Keterangan |
 |---|---|---|
-| `POST` | `/ingest` | Satu record atau array record (lihat tabel sumber). Satu record tidak valid = seluruh batch ditolak (422). Event dengan `url` yang sudah ada dibuang |
-| `GET` | `/events?limit=200` | Event terbaru |
+| `POST` | `/ingest` | Satu record atau array record (lihat tabel sumber). Satu record tidak valid = seluruh batch ditolak (422). Event dengan `url` yang sudah ada dibuang. Bila `INGEST_TOKEN` diatur, wajib header `X-Ingest-Token` (tanpa itu `401`) |
+| `GET` | `/events?limit=200&sources=auth,suricata` | Event terbaru; `sources` opsional untuk menyaring sumber |
 | `GET` | `/alerts?limit=50` | Alert terbaru, termasuk event pendukung dan `mitre` |
 | `GET` | `/stream` | SSE; `event: event` dan `event: alert`, data = JSON |
 
@@ -98,6 +101,8 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    DISCORD_WEBHOOK_URL=
    # cek hash APK ke MalwareBazaar, kunci gratis di https://auth.abuse.ch
    ABUSECH_AUTH_KEY=
+   # token rahasia untuk pengirim log; wajib bila backend dibuka ke jaringan lain
+   INGEST_TOKEN=
    ```
 
 3. Jalankan backend, database, dan scanner APK (build pertama butuh beberapa menit):
@@ -107,7 +112,7 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    docker compose ps
    ```
 
-   Ketiga service (`db`, `backend`, `apk-scanner`) harus berstatus `Up`, dan `db` berstatus `healthy`.
+   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `log-shipper`) harus berstatus `Up`, dan `db` berstatus `healthy`.
 
 4. Jalankan dashboard di terminal lain:
 
@@ -124,10 +129,11 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
 
 | Alamat | Isi |
 |---|---|
-| http://localhost:3000 | Dashboard (landing, `/pemantauan`, `/apk`) |
+| http://localhost:3000 | Dashboard (landing, `/pemantauan`, `/log`, `/apk`) |
 | http://localhost:8000/docs | API backend SIEM |
 | http://localhost:8001/docs | API scanner APK |
 | `localhost:5432` | PostgreSQL (user/password/db: `waspada`, hanya untuk demo lokal) |
+| `localhost:2222` | Server SSH latihan (sumber log demo) |
 
 Semua port hanya bisa diakses dari komputer itu sendiri (`127.0.0.1`), bukan dari perangkat lain di Wi-Fi yang sama. Ini disengaja.
 
@@ -160,6 +166,24 @@ Sumber nyata:
 docker compose exec backend python kev.py   # katalog CISA KEV terbaru x assets.yaml (aman diulang)
 docker compose exec backend python rss.py   # polling 21 feed berita setiap 5 menit (feeds.yaml)
 ```
+
+### Log nyata: pengirim log dan server SSH latihan
+
+`docker compose up -d` juga menjalankan **server SSH latihan** (`ssh-target`, port `127.0.0.1:2222`) dan **pengirim log** (`log-shipper`). Setiap percobaan login ke server latihan menghasilkan baris `auth.log` asli, dikirim ke SIEM dalam hitungan detik, dan tampil di **http://localhost:3000/log**. Sepuluh login gagal lalu satu berhasil dari IP yang sama memicu alert "Brute force berhasil masuk".
+
+```bash
+ssh latihan@localhost -p 2222
+```
+
+Akun latihan: `latihan`, sandi `latihan123` (ganti lewat `SSH_DEMO_PASSWORD` di `.env`). Login berhasil tidak mendapat shell: server hanya menampilkan pesan lalu menutup koneksi.
+
+Di server satuan sungguhan, salin [`shipper/waspada_shipper.py`](shipper/waspada_shipper.py) (hanya butuh Python 3.8, tanpa pip) dan jalankan, mis. sebagai service systemd:
+
+```bash
+INGEST_TOKEN=<token> python3 waspada_shipper.py --api http://<alamat-siem>:8000 --auth /var/log/auth.log --suricata /var/log/suricata/eve.json
+```
+
+Pengirim membaca baris baru seperti `tail -F` (tahan rotasi dan truncate log), mengirim per batch, dan menyimpan antrean bila SIEM sedang tidak terjangkau. **Sebelum membuka backend ke jaringan lain**, isi `INGEST_TOKEN` di `.env` (nilai acak panjang) dan ubah binding port backend dari `127.0.0.1`. Test pengirim: `docker run --rm -v "$PWD/shipper:/s" -w /s python:3.12-alpine python -m unittest`.
 
 Jalankan replay `intrusi.jsonl` **sebelum** `kev.py`: event KEV dari skenario memakai URL yang sama dengan hasil `kev.py`, sehingga yang datang belakangan dibuang sebagai duplikat.
 

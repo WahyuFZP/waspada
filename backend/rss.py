@@ -1,6 +1,7 @@
 """Poll feed RSS di feeds.yaml dan kirim artikelnya ke POST /ingest (duplikat URL dibuang oleh API)."""
 import argparse
 import logging
+import os
 import socket
 import time
 from datetime import datetime, timezone
@@ -37,7 +38,7 @@ def main():
         for feed in feeds:
             try:
                 batch = sorted(articles_from(feed), key=lambda a: a["timestamp"])
-                r = httpx.post(f"{args.api}/ingest", json=batch, timeout=30)
+                r = httpx.post(f"{args.api}/ingest", json=batch, timeout=30, headers={"X-Ingest-Token": os.environ.get("INGEST_TOKEN", "")})
                 r.raise_for_status()
                 logging.info("%s: %d artikel -> %s", feed["name"], len(batch), r.json())
             except Exception as exc:  # satu feed rusak tidak boleh menghentikan feed lain

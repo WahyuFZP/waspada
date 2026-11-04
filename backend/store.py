@@ -28,8 +28,11 @@ class Store:
     def _latest(self, table, limit):
         return [r[0] for r in self.db.execute(f"SELECT body FROM {table} ORDER BY ts DESC, id DESC LIMIT %s", (limit,))]
 
-    def events(self, limit=200):
-        return self._latest("events", limit)
+    def events(self, limit=200, sources=None):
+        if not sources:
+            return self._latest("events", limit)
+        return [r[0] for r in self.db.execute(
+            "SELECT body FROM events WHERE body->>'source' = ANY(%s) ORDER BY ts DESC, id DESC LIMIT %s", (sources, limit))]
 
     def alerts(self, limit=50):
         return self._latest("alerts", limit)

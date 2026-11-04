@@ -6,8 +6,8 @@ import type { Alert, Event } from "@/lib/types";
 
 export type StreamStatus = "connecting" | "live" | "reconnecting";
 
-/** Data awal lewat REST, lalu alert & event baru lewat SSE /stream. */
-export function useAlertStream(onAlert?: (a: Alert) => void) {
+/** Data awal lewat REST, lalu alert & event baru lewat SSE /stream. sources membatasi event ke sumber tertentu. */
+export function useAlertStream(onAlert?: (a: Alert) => void, sources?: string) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [status, setStatus] = useState<StreamStatus>("connecting");
@@ -17,7 +17,7 @@ export function useAlertStream(onAlert?: (a: Alert) => void) {
     let active = true;
     // dipanggil di setiap (re)connect: alert yang terlewat selama terputus ikut termuat
     const load = () =>
-      Promise.all([getAlerts(), getEvents()])
+      Promise.all([getAlerts(), getEvents(sources)])
         .then(([a, e]) => {
           if (!active) return;
           setAlerts(a);
@@ -32,7 +32,11 @@ export function useAlertStream(onAlert?: (a: Alert) => void) {
       load();
     };
     es.onerror = () => setStatus("reconnecting"); // EventSource menyambung ulang sendiri
-    es.addEventListener("event", (m) => setEvents((prev) => [JSON.parse(m.data), ...prev].slice(0, 200)));
+    es.addEventListener("event", (m) => {
+      const ev: Event = JSON.parse(m.data);
+      if (sources && !sources.split(",").includes(ev.source)) return;
+      setEvents((prev) => [ev, ...prev].slice(0, 200));
+    });
     es.addEventListener("alert", (m) => {
       const alert: Alert = JSON.parse(m.data);
       setAlerts((prev) => (prev.some((a) => a.id === alert.id) ? prev : [alert, ...prev]));

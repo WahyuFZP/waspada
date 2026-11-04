@@ -4,6 +4,7 @@ Demo deterministik: natuna.jsonl (OSINT berita), intrusi.jsonl (log internal + C
 """
 import argparse
 import json
+import os
 import time
 
 import httpx
@@ -18,7 +19,7 @@ with open(args.scenario, encoding="utf-8") as f:
     articles = [json.loads(line) for line in f if line.strip()]
 
 for article in articles:
-    r = httpx.post(f"{args.api}/ingest", json=article, timeout=15)
+    r = httpx.post(f"{args.api}/ingest", json=article, timeout=15, headers={"X-Ingest-Token": os.environ.get("INGEST_TOKEN", "")})
     r.raise_for_status()
     result = r.json()
     # artikel punya title; log auth punya line; Suricata punya alert.signature; KEV punya cve

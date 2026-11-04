@@ -1,9 +1,10 @@
 """API WASPADA: POST /ingest (berita, log auth, Suricata, CISA KEV), GET /events, GET /alerts, GET /stream (SSE)."""
 import asyncio
+import hmac
 import json
 import os
 
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -23,6 +24,7 @@ assets = load_assets()
 engine = Engine(load_rules())
 store = Store(os.environ.get("DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada"))
 subscribers: set[asyncio.Queue] = set()
+INGEST_TOKEN = os.environ.get("INGEST_TOKEN") or None
 
 
 def publish(kind, data):
@@ -31,7 +33,10 @@ def publish(kind, data):
 
 
 @app.post("/ingest")
-async def ingest(payload: dict | list[dict] = Body(...)):
+async def ingest(payload: dict | list[dict] = Body(...), x_ingest_token: str | None = Header(default=None)):
+    # tanpa INGEST_TOKEN, /ingest hanya aman karena port terikat 127.0.0.1; wajib diisi bila dibuka untuk pengirim log
+    if INGEST_TOKEN and not hmac.compare_digest(x_ingest_token or "", INGEST_TOKEN):
+        raise HTTPException(401, "token ingest salah atau tidak ada (header X-Ingest-Token)")
     records = payload if isinstance(payload, list) else [payload]
     normalized = []
     for i, record in enumerate(records):  # validasi semua dulu supaya batch tidak masuk setengah
@@ -56,8 +61,9 @@ async def ingest(payload: dict | list[dict] = Body(...)):
 
 
 @app.get("/events")
-def get_events(limit: int = 200):
-    return store.events(min(limit, 1000))
+def get_events(limit: int = 200, sources: str | None = None):
+    # sources=auth,suricata: halaman log butuh log keamanan saja, agar tidak terdorong keluar oleh berita RSS
+    return store.events(min(limit, 1000), sources.split(",") if sources else None)
 
 
 @app.get("/alerts")

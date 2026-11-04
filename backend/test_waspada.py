@@ -103,3 +103,47 @@ def test_invalid_article_rejected_whole_batch():
     r = client.post("/ingest", json=[good, {**good, "region": "mars"}])
     assert r.status_code == 422
     assert all(e["timestamp"] != good["timestamp"] for e in client.get("/events").json())
+
+
+def test_geoip_scopes_for_internal_and_documentation_ips():
+    import geoip
+    assert geoip.lookup("10.0.0.7") == {"scope": "internal"}
+    assert geoip.lookup("203.0.113.50") == {"scope": "reserved"}  # rentang dokumentasi, dipakai skenario demo
+
+
+def test_geoip_public_ip_has_country_and_owner():
+    import pytest
+
+    import geoip
+    if not geoip.COUNTRY:
+        pytest.skip("database DB-IP belum diunduh (image dibangun tanpa internet)")
+    g = geoip.lookup("8.8.8.8")
+    assert g["scope"] == "public" and g["country_code"] == "US" and "Google" in (g["org"] or "")
+
+
+def test_security_events_carry_geo_but_news_does_not():
+    line = "Oct 22 09:15:30 srv-web-01 sshd[1]: Accepted publickey for budi from 10.0.0.7 port 5 ssh2"
+    [e] = normalize({"kind": "auth", "line": line, "timestamp": "2026-10-22T09:15:30Z"}, load_topics())
+    assert e["geo"] == {"scope": "internal"}
+    news = normalize({"timestamp": "2026-10-21T08:00:00Z", "source": "x", "region": "domestic",
+                      "title": "Navy warships near Natuna"}, load_topics())
+    assert "geo" not in news[0]
+
+
+def test_ingest_token_required_when_configured(monkeypatch):
+    import sys
+    monkeypatch.setattr(sys.modules["app"], "INGEST_TOKEN", "rahasia-uji")
+    line = {"kind": "auth", "line": "Nov  4 09:15:31 srv-latihan sshd[1]: Failed password for latihan from 10.0.0.9 port 5 ssh2"}
+    assert client.post("/ingest", json=line).status_code == 401
+    assert client.post("/ingest", json=line, headers={"X-Ingest-Token": "salah"}).status_code == 401
+    assert client.post("/ingest", json=line, headers={"X-Ingest-Token": "rahasia-uji"}).status_code == 200
+
+
+def test_events_can_be_filtered_by_source():
+    client.post("/ingest", json={"timestamp": "2026-11-04T08:00:00Z", "source": "media-uji", "region": "domestic",
+                                 "title": "Navy warships near Natuna", "url": "https://example.com/filter-uji"})
+    client.post("/ingest", json={"kind": "auth", "timestamp": "2026-11-04T08:01:00Z",
+                                 "line": "Nov  4 08:01:00 srv-latihan sshd[1]: Failed password for latihan from 10.0.0.9 port 5 ssh2"})
+    sources = {e["source"] for e in client.get("/events?sources=auth,suricata").json()}
+    assert "auth" in sources and sources <= {"auth", "suricata"}  # berita "media-uji" tidak ikut
+    assert "media-uji" in {e["source"] for e in client.get("/events").json()}

@@ -9,7 +9,8 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const getAlerts = () => get<Alert[]>("/alerts");
-export const getEvents = () => get<Event[]>("/events");
+// sources: mis. "auth,suricata" untuk halaman log, agar log keamanan tidak terdorong keluar oleh berita
+export const getEvents = (sources?: string) => get<Event[]>(sources ? `/events?sources=${sources}` : "/events");
 
 export const SEVERITY_RANK: Record<Severity, number> = { critical: 3, high: 2, medium: 1, low: 0 };
 

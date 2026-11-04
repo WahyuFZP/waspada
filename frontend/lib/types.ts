@@ -17,6 +17,15 @@ export type Event = {
   user?: string;
   dest_port?: number | null;
   cve?: string | null;
+  raw?: Record<string, unknown>; // record asli dari sumber (mis. baris auth.log di raw.line)
+  // lokasi IP sumber (DB-IP Lite, offline); tidak ada di event lama sebelum fitur GeoIP
+  geo?: {
+    scope: "public" | "internal" | "reserved";
+    country_code?: string | null;
+    country?: string | null;
+    asn?: number | null;
+    org?: string | null;
+  };
 };
 
 export type Alert = {

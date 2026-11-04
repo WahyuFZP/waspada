@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { AlertDetail } from "@/components/alert-detail";
 import { AlertList } from "@/components/alert-list";
+import { AttackerIps } from "@/components/attacker-ips";
 import { ConnectionStatus } from "@/components/connection-status";
 import { CriticalToast } from "@/components/critical-toast";
 import { Hero } from "@/components/hero";
@@ -60,6 +61,11 @@ export default function Dashboard() {
                   <a href="#arus-berita" className="hover:text-ink">
                     Arus kejadian
                   </a>
+                </li>
+                <li>
+                  <Link href="/log" className="hover:text-ink">
+                    Log keamanan
+                  </Link>
                 </li>
                 <li>
                   <Link href="/apk" className="hover:text-ink">
@@ -127,6 +133,8 @@ export default function Dashboard() {
                 <AlertList alerts={alerts} loaded={loaded} freshIds={freshIds} onOpen={open} />
                 <NewsFeed events={events} loaded={loaded} />
               </div>
+
+              <AttackerIps events={events} loaded={loaded} />
             </div>
           </motion.div>
         </section>

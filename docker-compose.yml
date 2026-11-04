@@ -21,6 +21,8 @@ services:
       DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada
       TEST_DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada_test
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      # wajib diisi bila /ingest dibuka untuk pengirim log di server lain; kosong = tanpa autentikasi (lokal saja)
+      INGEST_TOKEN: ${INGEST_TOKEN:-}
     ports: ["127.0.0.1:8000:8000"]
     volumes: ["./backend:/app"]  # kode live; --reload memuat ulang saat file diubah
     # graceful timeout: stream SSE tidak pernah selesai sendiri, tanpa ini --reload menunggu selamanya
@@ -51,6 +53,32 @@ services:
     cpus: 2
     pids_limit: 256
 
+  # Demo log nyata: server SSH latihan. Coba login dari laptop ini: ssh latihan@localhost -p 2222
+  # Setiap percobaan menulis log asli ke volume demolog, yang dikirim log-shipper ke SIEM.
+  ssh-target:
+    build: ./demo/ssh-target
+    hostname: srv-latihan
+    environment:
+      SSH_DEMO_PASSWORD: ${SSH_DEMO_PASSWORD:-latihan123}
+    ports: ["127.0.0.1:2222:22"]
+    volumes: ["demolog:/var/log/waspada"]
+
+  # Pengirim log: skrip yang sama dengan yang dipasang di server satuan (shipper/waspada_shipper.py)
+  log-shipper:
+    image: python:3.12-alpine
+    command: python /app/waspada_shipper.py --api http://backend:8000 --auth /logs/auth.log
+    environment:
+      INGEST_TOKEN: ${INGEST_TOKEN:-}
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./shipper:/app:ro
+      - demolog:/logs:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on: [backend, ssh-target]
+
 volumes:
   pgdata:
   apkdata:
+  demolog:
