@@ -22,6 +22,15 @@ class Store:
     def add_alert(self, alert):
         self.db.execute("INSERT INTO alerts VALUES (%s, %s, %s)", (alert["id"], alert["timestamp"], Jsonb(alert)))
 
+    def handle_alert(self, alert_id, status, entry):
+        """Ubah status alert dan tambahkan satu entri riwayat penanganan, dalam satu UPDATE (atomik)."""
+        row = self.db.execute(
+            """UPDATE alerts SET body = body || jsonb_build_object(
+                   'status', %s::text, 'handling', COALESCE(body->'handling', '[]'::jsonb) || %s)
+               WHERE id = %s RETURNING body""",
+            (status, Jsonb([entry]), alert_id)).fetchone()
+        return row[0] if row else None
+
     def seen_url(self, url):
         return url is not None and self.db.execute("SELECT 1 FROM events WHERE url = %s", (url,)).fetchone() is not None
 

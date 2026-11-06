@@ -118,7 +118,7 @@ flowchart LR
 | Halaman | Isi | Data |
 |---|---|---|
 | `/` | Pilihan modul | Statis |
-| `/pemantauan` | Statistik, alur korelasi, alert (detail + MITRE), arus kejadian, asal IP penyerang | REST `/alerts`, `/events` + SSE `/stream` dari backend |
+| `/pemantauan` | Statistik, alur korelasi, alert (detail + MITRE + penanganan: status dan catatan analis), arus kejadian, asal IP penyerang | REST `/alerts`, `/events`, `PATCH /alerts/{id}` + SSE `/stream` dari backend |
 | `/log` | Statistik log, grafik log per menit, status pengirim per host, aliran baris log live (saring jenis, cari IP/host), asal IP penyerang, cara memasang pengirim | REST `/events?sources=auth,suricata` + SSE `/stream` |
 | `/apk` | Unggah APK dan riwayat | `POST /scan`, `GET /scans` dari apk-scanner |
 | `/apk/[id]` | Hasil pemindaian dan Analisa Akhir | `GET /scans/{id}` |
@@ -131,6 +131,7 @@ Dashboard hanya menampilkan data; semua logika deteksi ada di backend. Arah desa
 |---|---|
 | Jaringan | Semua port Docker hanya terikat ke `127.0.0.1`; perangkat lain di Wi-Fi tidak bisa menjangkau API atau database |
 | Token ingest | Bila `INGEST_TOKEN` diatur, `POST /ingest` wajib membawa header `X-Ingest-Token` yang sama (dibandingkan dengan `hmac.compare_digest`); tanpa itu `401`. Wajib diisi sebelum backend dibuka ke jaringan lain |
+| Penanganan alert | Riwayat `handling` hanya bertambah (jejak audit). Belum ada login, jadi riwayat tidak mencatat siapa analisnya dan `PATCH /alerts/{id}` hanya aman selama backend terikat `127.0.0.1` |
 | Container log-shipper | Filesystem read-only, log di-mount read-only, semua capability dicabut, `no-new-privileges` |
 | Batas kepercayaan | Record `/ingest` dan file APK divalidasi sebelum diproses; URL berita hanya `http`/`https`; nama file dari pengguna dibuang |
 | Container scanner | User non-root, kode di-mount read-only, filesystem read-only, semua capability dicabut, `no-new-privileges` |

@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [freshIds, setFreshIds] = useState<Set<string>>(new Set());
   const [pulseKey, setPulseKey] = useState<string | null>(null); // alert terbaru dari stream -> denyut inti jaring
 
-  const { alerts, events, status, loaded } = useAlertStream((a) => {
+  const { alerts, events, status, loaded, replaceAlert } = useAlertStream((a) => {
     setFreshIds((prev) => new Set(prev).add(a.id));
     setPulseKey(a.id);
     if (a.severity === "critical") setToast(a);
@@ -144,7 +144,7 @@ export default function Dashboard() {
         </footer>
       </div>
 
-      <AlertDetail alert={selected} onClose={close} />
+      <AlertDetail alert={selected} onClose={close} onUpdated={replaceAlert} />
       <CriticalToast alert={selected ? null : toast} onOpen={open} onDismiss={dismissToast} />
     </MotionConfig>
   );

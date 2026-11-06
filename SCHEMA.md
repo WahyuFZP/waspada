@@ -112,6 +112,8 @@ Dibuat oleh `engine.py` saat rangkaian event dalam satu window cocok dengan rule
 | `group` | Nilai field `group_by` rule, mis. `{src_ip, host}` |
 | `timestamp` | Waktu event pendukung terakhir |
 | `events` | Event pendukung lengkap (bukti) |
+| `status` | Tindak lanjut analis: `baru` / `ditangani` / `selesai`. Tidak ada pada alert yang belum pernah ditangani (dibaca sebagai `baru`) |
+| `handling` | Riwayat penanganan `[{timestamp, status, note}]`, urut waktu. Hanya bertambah lewat `PATCH /alerts/{id}`, tidak pernah diubah atau dihapus |
 
 Rule ditulis di `rules.yaml`: `name`, `severity`, `window` (`5m`, `6h`, `30d`), `group_by`, `steps` (tiap langkah: `match`, `count`, `distinct`), `mitre`.
 
@@ -145,7 +147,7 @@ CREATE TABLE alerts (
 
 ### 1.8 Stream real-time (`GET /stream`)
 
-Server-Sent Events. `event: event` membawa satu event (1.2), `event: alert` membawa satu alert (1.5). Komentar `: ping` dikirim setiap 15 detik agar koneksi tetap hidup.
+Server-Sent Events. `event: event` membawa satu event (1.2), `event: alert` membawa satu alert baru (1.5), `event: alert_update` membawa alert yang status atau riwayat penanganannya berubah. Komentar `: ping` dikirim setiap 15 detik agar koneksi tetap hidup.
 
 ---
 

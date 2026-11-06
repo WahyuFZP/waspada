@@ -1,4 +1,4 @@
-import type { Alert, Event, Severity } from "./types";
+import type { Alert, AlertStatus, Event, Severity } from "./types";
 
 export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -11,6 +11,18 @@ async function get<T>(path: string): Promise<T> {
 export const getAlerts = () => get<Alert[]>("/alerts");
 // sources: mis. "auth,suricata" untuk halaman log, agar log keamanan tidak terdorong keluar oleh berita
 export const getEvents = (sources?: string) => get<Event[]>(sources ? `/events?sources=${sources}` : "/events");
+
+export async function handleAlert(id: string, status: AlertStatus, note: string): Promise<Alert> {
+  const res = await fetch(`${API}/alerts/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, note }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => null))?.detail ?? `HTTP ${res.status}`);
+  return res.json();
+}
+
+export const STATUS_LABEL: Record<AlertStatus, string> = { baru: "Baru", ditangani: "Ditangani", selesai: "Selesai" };
 
 export const SEVERITY_RANK: Record<Severity, number> = { critical: 3, high: 2, medium: 1, low: 0 };
 

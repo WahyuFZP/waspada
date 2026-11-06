@@ -147,3 +147,18 @@ def test_events_can_be_filtered_by_source():
     sources = {e["source"] for e in client.get("/events?sources=auth,suricata").json()}
     assert "auth" in sources and sources <= {"auth", "suricata"}  # berita "media-uji" tidak ikut
     assert "media-uji" in {e["source"] for e in client.get("/events").json()}
+
+
+def test_alert_handling_appends_history_and_requires_note_to_close():
+    alert_id = client.get("/alerts").json()[0]["id"]  # test skenario di atas sudah membuat alert
+    url = f"/alerts/{alert_id}"
+    assert client.patch(url, json={"status": "dibuang"}).status_code == 422
+    assert client.patch(url, json={"status": "selesai"}).status_code == 422  # selesai wajib ada catatan
+    assert client.patch("/alerts/tidak-ada", json={"status": "ditangani"}).status_code == 404
+
+    client.patch(url, json={"status": "ditangani", "note": "  IP diblokir di firewall  "})
+    alert = client.patch(url, json={"status": "selesai", "note": "Akun latihan direset"}).json()
+    assert alert["status"] == "selesai"
+    assert [(h["status"], h["note"]) for h in alert["handling"]] == [
+        ("ditangani", "IP diblokir di firewall"), ("selesai", "Akun latihan direset")]
+    assert next(a for a in client.get("/alerts").json() if a["id"] == alert_id)["status"] == "selesai"
