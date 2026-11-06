@@ -50,6 +50,20 @@
     - match: {event_type: ids.exploit_attempt}
     - match: {event_type: auth.success}
 
+- name: Pemindaian diikuti login berhasil
+  severity: critical
+  window: 30m
+  group_by: [src_ip, host]
+  mitre:
+    - {id: T1046, name: Network Service Discovery}
+    - {id: T1078, name: Valid Accounts}
+  steps:
+    - match: {event_type: ids.scan}
+      count: 5
+      distinct: dest_port
+      min_distinct: 5
+    - match: {event_type: auth.success}
+
 # ---------- OSINT berita (konteks geopolitik) ----------
 
 - name: Lonjakan pemberitaan

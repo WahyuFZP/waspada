@@ -59,6 +59,7 @@ Berita memakai `region` dan `topic` sebagai pengganti `host`/`src_ip`.
 | Eksploitasi pada aset rentan KEV: aset cocok CVE KEV → upaya eksploitasi | cross-source | high | T1190 |
 | Brute force berhasil masuk: ≥10 login gagal → login berhasil, IP & host sama | sequence | high | T1110, T1078 |
 | Intrusi berhasil pada aset rentan: KEV → eksploitasi → login berhasil | cross-source | critical | T1190, T1078 |
+| Pemindaian diikuti login berhasil: ≥5 port dipindai → login berhasil, IP & host sama, 30 menit | cross-source | critical | T1046, T1078 |
 | Lonjakan pemberitaan: ≥5 artikel dari ≥3 media dalam 1 jam | threshold | medium | - |
 | Insiden lalu respons diplomatik dalam 6 jam | sequence | high | - |
 | Isu memanas lintas wilayah: insiden (dalam negeri) → diplomatik (asing) → militer | cross-source | critical | - |
@@ -113,7 +114,7 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    docker compose ps
    ```
 
-   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `log-shipper`) harus berstatus `Up`, dan `db` berstatus `healthy`.
+   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `suricata`, `log-shipper`) harus berstatus `Up`, dan `db` berstatus `healthy`.
 
 4. Jalankan dashboard di terminal lain:
 
@@ -171,6 +172,14 @@ docker compose exec backend python rss.py   # polling 21 feed berita setiap 5 me
 ### Log nyata: pengirim log dan server SSH latihan
 
 `docker compose up -d` juga menjalankan **server SSH latihan** (`ssh-target`, port `127.0.0.1:2222`) dan **pengirim log** (`log-shipper`). Setiap percobaan login ke server latihan menghasilkan baris `auth.log` asli, dikirim ke SIEM dalam hitungan detik, dan tampil di **http://localhost:3000/log**. Sepuluh login gagal lalu satu berhasil dari IP yang sama memicu alert "Brute force berhasil masuk".
+
+**Sensor Suricata** (`suricata`) berbagi jaringan dengan server latihan dan mengawasi setiap paket yang masuk, memakai rule lokal di [`demo/suricata/waspada.rules`](demo/suricata/waspada.rules). Coba rangkaian serangan lintas sumber, hanya ke server latihan ini, dari container sekali pakai (Git Bash di Windows: awali dengan `MSYS_NO_PATHCONV=1`):
+
+```bash
+docker run --rm --network waspada_default alpine:3.20 sh -c 'apk add -q nmap sshpass openssh-client; nmap -Pn --top-ports 200 ssh-target; sshpass -p latihan123 ssh -o StrictHostKeyChecking=no latihan@ssh-target true'
+```
+
+Pemindaian tercatat Suricata dan login tercatat `auth.log`. SIEM menggabungkan keduanya menjadi alert kritis "Pemindaian diikuti login berhasil". Rule lokal hanya mengenali pemindaian dan koneksi SSH beruntun; untuk server sungguhan, tambahkan ET Open lewat `suricata-update`.
 
 ```bash
 ssh latihan@localhost -p 2222
