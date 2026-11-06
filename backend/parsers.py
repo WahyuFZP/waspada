@@ -85,11 +85,13 @@ def parse_suricata(record, parse_ts, assets):
         event_type = "ids.exploit_attempt"
     else:
         event_type = "ids.alert"
+    # sensor-name (field "host") dipakai bila sensor mengawasi satu server; IP di luar inventaris tetap terlihat apa adanya
+    sensor = record.get("host") if isinstance(record.get("host"), str) and record["host"] else None
     return [{
         "timestamp": _iso(parse_ts(record["timestamp"])),
         "source": "suricata",
         "event_type": event_type,
-        "host": assets["by_ip"].get(dest_ip, dest_ip),  # IP di luar inventaris tetap terlihat apa adanya
+        "host": assets["by_ip"].get(dest_ip) or sensor or dest_ip,
         "src_ip": src_ip,
         "dest_port": port,
         "cve": cves[0] if cves else None,

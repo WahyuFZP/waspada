@@ -1,0 +1,27 @@
+%YAML 1.1
+---
+# Sensor demo: mengawasi lalu lintas server SSH latihan.
+# sensor-name mengisi field "host" di eve.json, agar event IDS dan log SSH terkorelasi ke host yang sama.
+sensor-name: srv-latihan
+
+vars:
+  address-groups:
+    HOME_NET: "[10.0.0.0/8,172.16.0.0/12,192.168.0.0/16]"
+    EXTERNAL_NET: "any"
+
+default-log-dir: /var/log/suricata
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:  # hanya alert: flow dan dns membuat file cepat membesar, dan SIEM tidak memakainya
+        - alert
+
+af-packet:
+  - interface: eth0
+
+default-rule-path: /waspada
+rule-files:
+  - waspada.rules

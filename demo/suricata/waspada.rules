@@ -1,0 +1,5 @@
+# Rule lokal sensor demo. Kata "SCAN" di msg membuat parser SIEM mencatatnya sebagai ids.scan.
+# limit: maksimal 5 alert per IP per menit, tepat satu "Pemindaian port" di SIEM walau nmap memindai ribuan port.
+alert tcp any any -> $HOME_NET ![22] (msg:"WASPADA SCAN SYN ke port selain SSH"; flags:S; threshold:type limit, track by_src, count 5, seconds 60; classtype:attempted-recon; sid:9000001; rev:1;)
+# Muncul setiap 5 koneksi SSH dalam 60 detik dari IP yang sama: terlihat di jaringan walau log server sudah dihapus penyerang.
+alert tcp any any -> $HOME_NET 22 (msg:"WASPADA SSH koneksi beruntun"; flags:S; threshold:type threshold, track by_src, count 5, seconds 60; classtype:attempted-admin; sid:9000002; rev:1;)
