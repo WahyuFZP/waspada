@@ -36,4 +36,9 @@ export type Alert = {
   timestamp: string;
   events: Event[];
   mitre?: { id: string; name: string }[];
+  // tindak lanjut analis; alert lama tanpa field ini berarti "baru"
+  status?: AlertStatus;
+  handling?: { timestamp: string; status: AlertStatus; note: string }[];
 };
+
+export type AlertStatus = "baru" | "ditangani" | "selesai";

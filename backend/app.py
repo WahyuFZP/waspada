@@ -1,8 +1,10 @@
-"""API WASPADA: POST /ingest (berita, log auth, Suricata, CISA KEV), GET /events, GET /alerts, GET /stream (SSE)."""
+"""API WASPADA: POST /ingest (berita, log auth, Suricata, CISA KEV), GET /events, GET /alerts,
+PATCH /alerts/{id} (tindak lanjut analis), GET /stream (SSE)."""
 import asyncio
 import hmac
 import json
 import os
+from datetime import datetime, timezone
 
 from fastapi import Body, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -69,6 +71,27 @@ def get_events(limit: int = 200, sources: str | None = None):
 @app.get("/alerts")
 def get_alerts(limit: int = 50):
     return store.alerts(min(limit, 500))
+
+
+STATUSES = ("baru", "ditangani", "selesai")
+
+
+@app.patch("/alerts/{alert_id}")
+def handle_alert(alert_id: str, payload: dict = Body(...)):
+    """Tindak lanjut analis: ganti status dan/atau catat langkah. Riwayat hanya bertambah, tidak pernah diubah."""
+    status, note = payload.get("status"), payload.get("note", "")
+    if status not in STATUSES:
+        raise HTTPException(422, f"status harus salah satu dari {', '.join(STATUSES)}")
+    if not isinstance(note, str) or len(note.strip()) > 1000:
+        raise HTTPException(422, "note harus teks maksimal 1000 karakter")
+    if status == "selesai" and not note.strip():
+        raise HTTPException(422, "alert yang diselesaikan wajib diberi catatan hasil penanganan")
+    entry = {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "status": status, "note": note.strip()}
+    alert = store.handle_alert(alert_id, status, entry)
+    if alert is None:
+        raise HTTPException(404, "alert tidak ditemukan")
+    publish("alert_update", alert)  # bukan "alert": dashboard lain memperbarui kartu tanpa toast atau denyut ulang
+    return alert
 
 
 @app.get("/stream")

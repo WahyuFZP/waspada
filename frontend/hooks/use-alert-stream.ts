@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API, getAlerts, getEvents } from "@/lib/api";
 import type { Alert, Event } from "@/lib/types";
 
@@ -12,6 +12,8 @@ export function useAlertStream(onAlert?: (a: Alert) => void, sources?: string) {
   const [events, setEvents] = useState<Event[]>([]);
   const [status, setStatus] = useState<StreamStatus>("connecting");
   const [loaded, setLoaded] = useState(false);
+  // ganti alert yang sudah ada (status/catatan berubah); dipakai stream dan hasil PATCH dari panel detail
+  const replaceAlert = useCallback((a: Alert) => setAlerts((prev) => prev.map((x) => (x.id === a.id ? a : x))), []);
 
   useEffect(() => {
     let active = true;
@@ -42,6 +44,7 @@ export function useAlertStream(onAlert?: (a: Alert) => void, sources?: string) {
       setAlerts((prev) => (prev.some((a) => a.id === alert.id) ? prev : [alert, ...prev]));
       onAlert?.(alert);
     });
+    es.addEventListener("alert_update", (m) => replaceAlert(JSON.parse(m.data)));
     return () => {
       active = false;
       es.close();
@@ -50,5 +53,5 @@ export function useAlertStream(onAlert?: (a: Alert) => void, sources?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { alerts, events, status, loaded };
+  return { alerts, events, status, loaded, replaceAlert };
 }

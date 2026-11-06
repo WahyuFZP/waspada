@@ -71,7 +71,8 @@ Berita memakai `region` dan `topic` sebagai pengganti `host`/`src_ip`.
 | `POST` | `/ingest` | Satu record atau array record (lihat tabel sumber). Satu record tidak valid = seluruh batch ditolak (422). Event dengan `url` yang sudah ada dibuang. Bila `INGEST_TOKEN` diatur, wajib header `X-Ingest-Token` (tanpa itu `401`) |
 | `GET` | `/events?limit=200&sources=auth,suricata` | Event terbaru; `sources` opsional untuk menyaring sumber |
 | `GET` | `/alerts?limit=50` | Alert terbaru, termasuk event pendukung dan `mitre` |
-| `GET` | `/stream` | SSE; `event: event` dan `event: alert`, data = JSON |
+| `PATCH` | `/alerts/{id}` | Tindak lanjut analis: `{"status": "baru" \| "ditangani" \| "selesai", "note": "..."}`. Status `selesai` wajib disertai catatan; setiap perubahan ditambahkan ke riwayat `handling` |
+| `GET` | `/stream` | SSE; `event: event`, `event: alert`, dan `event: alert_update` (status alert berubah), data = JSON |
 
 ## Instalasi (untuk kolaborator)
 

@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { formatTime, groupLabel, originLabel } from "@/lib/api";
 import type { Alert } from "@/lib/types";
-import { SeverityBadge } from "./severity-badge";
+import { SeverityBadge, StatusBadge } from "./severity-badge";
 
 export function AlertCard({ alert, fresh, onOpen }: { alert: Alert; fresh: boolean; onOpen: () => void }) {
   const sources = new Set(alert.events.map((e) => e.source)).size;
@@ -29,11 +29,14 @@ export function AlertCard({ alert, fresh, onOpen }: { alert: Alert; fresh: boole
         }
         transition={{ duration: 1.1, repeat: 1 }}
         className={`group flex w-full flex-col gap-3 rounded-xl border bg-white/[0.02] p-4 text-left transition-colors hover:bg-surface-2 ${
-          critical ? "border-sev-critical/50" : "border-line"
-        }`}
+          critical && alert.status !== "selesai" ? "border-sev-critical/50" : "border-line"
+        } ${alert.status === "selesai" ? "opacity-70" : ""}`}
       >
         <span className="flex items-center justify-between gap-3">
-          <SeverityBadge severity={alert.severity} />
+          <span className="flex items-center gap-2">
+            <SeverityBadge severity={alert.severity} />
+            <StatusBadge status={alert.status} />
+          </span>
           <span className="font-data text-xs text-ink-muted">{formatTime(alert.timestamp)}</span>
         </span>
         <span className="font-display text-2xl font-semibold leading-tight">{alert.rule}</span>
