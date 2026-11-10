@@ -17,7 +17,7 @@ export function NewsFeed({ events, loaded }: { events: Event[]; loaded: boolean 
 
   return (
     <section id="arus-berita" aria-labelledby="feed-title" className="flex min-w-0 flex-col gap-4">
-      <h2 id="feed-title" className="font-display text-3xl font-bold">
+      <h2 id="feed-title" className="font-pixel text-xl font-bold md:text-2xl">
         Arus Kejadian
       </h2>
       <Segmented

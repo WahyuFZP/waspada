@@ -57,13 +57,13 @@ export function ActivityChart({ events, now }: { events: Event[]; now: number })
   return (
     <section aria-labelledby="chart-title" className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-surface p-4 md:p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="chart-title" className="font-display text-2xl font-bold">
+        <h2 id="chart-title" className="font-pixel text-lg font-bold md:text-xl">
           Log per menit
         </h2>
         <span className="font-data text-xs text-ink-muted">30 menit terakhir · {sum} baris</span>
       </div>
       {sum === 0 ? (
-        <p className="flex h-40 items-center justify-center rounded-md border border-dashed border-line px-4 text-center text-sm text-ink-muted">
+        <p className="flex h-40 items-center justify-center rounded-md border border-dashed border-line px-4 text-center text-base text-ink-muted">
           Belum ada log dalam 30 menit terakhir.
         </p>
       ) : (
@@ -124,10 +124,10 @@ export function SourceStatus({ events, now }: { events: Event[]; now: number }) 
 
   return (
     <section aria-labelledby="src-title" className="flex min-w-0 flex-col gap-3 rounded-2xl border border-line bg-surface p-4 md:p-5">
-      <h2 id="src-title" className="font-display text-2xl font-bold">
+      <h2 id="src-title" className="font-pixel text-lg font-bold md:text-xl">
         Sumber log
       </h2>
-      {rows.length === 0 && <p className="text-sm text-ink-muted">Belum ada server yang mengirim log.</p>}
+      {rows.length === 0 && <p className="text-base text-ink-muted">Belum ada server yang mengirim log.</p>}
       <ul className="flex flex-col gap-2">
         {rows.map(([host, h]) => {
           const active = now - h.last < ACTIVE_MS;
@@ -183,7 +183,7 @@ export function LogStream({ events, loaded }: { events: Event[]; loaded: boolean
   return (
     <section aria-labelledby="stream-title" className="flex min-w-0 flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="stream-title" className="font-display text-3xl font-bold">
+        <h2 id="stream-title" className="font-pixel text-xl font-bold md:text-2xl">
           Aliran log
         </h2>
         <label className="flex flex-col gap-1">
@@ -211,7 +211,7 @@ export function LogStream({ events, loaded }: { events: Event[]; loaded: boolean
       />
       {!loaded && <p className="text-ink-muted">Memuat log…</p>}
       {loaded && shown.length === 0 && (
-        <p className="rounded-md border border-dashed border-line p-4 text-sm text-ink-muted">
+        <p className="rounded-md border border-dashed border-line p-4 text-base text-ink-muted">
           {events.length === 0
             ? "Belum ada log. Jalankan pengirim log di server, atau coba login ke server latihan: ssh latihan@localhost -p 2222"
             : "Tidak ada log yang cocok dengan saringan ini."}

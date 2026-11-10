@@ -2,6 +2,7 @@
 
 import { animate, createScope, createTimeline, stagger, utils } from "animejs";
 import { useEffect, useRef, type ReactNode } from "react";
+import { LogoMark } from "./logo-mark";
 
 // Objek 3D tanpa WebGL: wajah SVG ditumpuk `depth` lapis sepanjang sumbu Z (1px per lapis), sehingga terlihat tebal
 // saat dimiringkan dengan perspektif CSS. Lapis depan berwarna terang, lapis belakang lebih gelap sebagai sisi objek.
@@ -16,41 +17,10 @@ function Stack({ depth, layer }: { depth: number; layer: (front: boolean) => Rea
 const reduceMotion = { reduce: "(prefers-reduced-motion: reduce)" };
 const preserve = { transformStyle: "preserve-3d" } as const;
 
-// Logo WASPADA sebagai kentongan pos ronda yang digantung. Saat halaman dibuka ia berayun sekali lalu diam,
-// seperti baru dipukul: peringatan dibunyikan.
+// Logo WASPADA besar di landing: kentongan berpiksel yang sama dengan logo navigasi (LogoMark). Saat halaman dibuka
+// ia berayun sekali lalu diam, seperti baru dipukul: peringatan dibunyikan (per bingkai, .px-swing di globals.css).
 export function Kentongan3D({ className = "" }: { className?: string }) {
-  const swing = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const scope = createScope({ root: swing, mediaQueries: reduceMotion }).add((self) => {
-      if (self?.matches.reduce) return;
-      animate(swing.current!, { rotateZ: [0, 24, -16, 10, -5, 2, 0], duration: 3200, delay: 450, ease: "outSine" });
-    });
-    return () => scope.revert();
-  }, []);
-
-  return (
-    <div role="img" aria-label="Logo WASPADA: kentongan" className={className} style={{ perspective: "600px" }}>
-      <div className="relative h-full w-full" style={{ ...preserve, transform: "rotateX(10deg) rotateY(-38deg)" }}>
-        <div ref={swing} className="absolute inset-0" style={{ ...preserve, transformOrigin: "50% 6%" }}>
-          <Stack
-            depth={16}
-            layer={(front) => (
-              <svg viewBox="0 0 64 64" className="h-full w-full">
-                <path
-                  className={front ? "fill-siber-bright" : "fill-siber"}
-                  fillRule="evenodd"
-                  d="M32 3a3 3 0 0 1 3 3v3h3a11 11 0 0 1 11 11v30a11 11 0 0 1-11 11H26a11 11 0 0 1-11-11V20A11 11 0 0 1 26 9h3V6a3 3 0 0 1 3-3zM28 20v30a4 4 0 0 0 8 0V20a4 4 0 0 0-8 0z"
-                />
-                <rect className={front ? "fill-gold" : "fill-gold-deep"} x="3" y="24" width="6" height="22" rx="3" />
-                <rect className={front ? "fill-gold" : "fill-gold-deep"} x="55" y="24" width="6" height="22" rx="3" />
-              </svg>
-            )}
-          />
-        </div>
-      </div>
-    </div>
-  );
+  return <LogoMark className={className} label="Logo WASPADA: kentongan" swing />;
 }
 
 // Lima kelompok pemeriksaan Pemeriksa APK (aturan R01–R14), keluar-masuk dari layar ponsel. Isinya apa yang

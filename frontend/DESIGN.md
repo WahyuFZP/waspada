@@ -39,15 +39,24 @@ Severity selalu ditulis dengan label teks, bukan hanya warna:
 | medium | SEDANG | `sev-medium` `#EADB5B` |
 | low | RENDAH | `sev-low` `#9AA08A` |
 
-## Tipografi: tiga font, tiga peran
+## Tipografi: empat font, empat peran
 
 | Peran | Font | Kelas | Alasan |
 |---|---|---|---|
-| Headline | Barlow Condensed (600/700) | `font-display` | Huruf rapat bergaya papan penanda; tegas dan hemat ruang di layar lebar |
-| Deskripsi | Public Sans (400/500) | `font-body` (default `body`) | Sans netral dari sistem desain pemerintahan; resmi dan mudah dibaca untuk judul berita |
-| Pesan kecil | IBM Plex Mono (400/500) | `font-data` | Label, waktu, sumber, badge; angka sejajar sehingga timestamp terbaca rapi |
+| Judul pendek (H1/H2 sampai 3 kata) | Silkscreen (400/700) | `font-pixel` | Wajah tema piksel 8-bit: nama merek, judul bagian, tombol, nomor tahap. Huruf lebar mirip kapital, jadi hanya untuk kata pendek |
+| Judul panjang dan teks informasi | Pixelify Sans (400/500/700) | `font-body` (default `body`) | Tetap bergaya piksel, tetapi huruf besar-kecilnya jelas, jadi kalimat panjang dan headline 4+ kata cepat dibaca juri |
+| Label data | IBM Plex Mono (400/500) | `font-data` | Waktu, IP, port, kode MITRE, badge; angka sejajar dan karakter mirip (0/O, 1/l) mudah dibedakan |
+| Judul kartu dan angka statistik | Barlow Condensed (600/700) | `font-display` | Masih dipakai di kartu alert, nama tahap alur, dan angka statistik |
 
-Aturan: tidak ada font keempat. Teks yang bukan headline dan bukan deskripsi memakai `font-data`.
+Aturan:
+- Tidak ada font kelima.
+- H1/H2 pendek memakai `font-pixel`. H1/H2 berupa kalimat atau 4+ kata (hero, "Periksa APK sebelum dipasang", nama rule di detail alert, status analisa akhir) memakai `font-body` tebal.
+- Teks `font-body` minimal 16px (`text-base`): font piksel kehilangan bentuk huruf di bawah ukuran itu. Jarak baris body 1,6.
+- Data yang harus dibedakan per karakter (IP, waktu, hash, nama file) tetap `font-data`.
+
+### Gaya piksel ringan (di luar landing)
+
+Landing memakai tema piksel penuh. Halaman kerja (pemantauan, log, APK) memakai bingkainya: logo kentongan berpiksel (`LogoMark`, tajam di 34px), nama merek `font-pixel`, judul H1/H2 piksel sesuai aturan di atas, tombol blok bersudut tajam dengan bayangan offset yang kempis saat ditekan, nomor tahap persegi, titik status persegi, dan latar kisi piksel di hero. Panel data tetap tenang supaya mudah dibaca.
 
 ## Nada bahasa
 
@@ -71,7 +80,8 @@ Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/
 | Event / alert baru dari stream | **Alur korelasi** (Ingest → Normalisasi → Korelasi → Peringatan): paket emas per event menuju Korelasi, paket merah per alert menuju Peringatan. Tanpa data baru, alur diam |
 | Panel pemantauan masuk layar | Naik halus sekali (scroll reveal) |
 | Section lain masuk layar (alur korelasi, kotak unggah, riwayat, detail hasil scan) | Naik halus sekali, komponen `Reveal` |
-| Landing dibuka | Kentongan 3D berayun sekali lalu diam, seperti baru dipukul: peringatan dibunyikan |
+| Landing dibuka | Kentongan berpiksel berayun sekali dari gantungannya, per bingkai (`steps`), lalu diam, seperti baru dipukul: peringatan dibunyikan. Mati saat reduce motion dan di layar < 768px |
+| Landing digulir | Kentongan berayun mulus ke kanan-kiri dari gantungannya mengikuti kecepatan gulir, seperti gantungan kunci: bergoyang beberapa kali lalu diam, tanpa gerak naik-turun. Satu-satunya gerak halus di landing, atas permintaan pemilik; mati saat reduce motion dan di layar < 768px |
 | APK sedang diunggah/dianalisis | Garis pindai bergerak di layar ponsel 3D dan titik di kartu berkedip; diam saat tidak ada proses |
 | Halaman Pemeriksa APK terbuka | Lima kartu pemeriksaan (izin, sertifikat, URL dan domain, kode tersembunyi, judi online) terus keluar-masuk dari layar ponsel bergantian. Isinya apa yang diperiksa, bukan hasil: halaman unggah belum punya hasil scan |
 | Baris log baru di `/log` | Meluncur masuk dari atas dengan sorotan emas yang memudar 2,2 detik; baris lain bergeser (layout) |
@@ -81,7 +91,7 @@ Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/
 
 ## Motif 3D: perangkat fisik
 
-Dua objek 3D tanpa WebGL (`components/objects-3d.tsx`): wajah SVG ditumpuk beberapa lapis sepanjang sumbu Z lalu dimiringkan dengan perspektif CSS. Hanya objek yang punya makna: **kentongan** (logo, peringatan dini) di landing dan **ponsel berisi paket APK** di Pemeriksa APK. Dashboard tidak memakai objek 3D agar tetap tenang untuk analis.
+Objek tanpa WebGL di `components/objects-3d.tsx`, hanya yang punya makna. **Ponsel berisi paket APK** di Pemeriksa APK: wajah SVG ditumpuk beberapa lapis sepanjang sumbu Z lalu dimiringkan dengan perspektif CSS. **Kentongan** (logo, peringatan dini) di landing digambar sebagai piksel 16×16 (`crispEdges`) dengan bayangan offset 1 piksel, senada dengan tema piksel landing. Ini satu-satunya unsur berwarna non-severity di landing: logo tetap memakai warna identitas (hijau perisai, emas). Dashboard tidak memakai objek 3D agar tetap tenang untuk analis.
 
 Unit nyata diberi kelas `.slab` (bayangan keras bertumpuk tanpa blur, `app/globals.css`) agar tampak seperti perangkat fisik: kartu modul di landing (ditambah `.slab-press`, tertekan saat disorot), tahap alur korelasi, dan kotak unggah APK. Tidak dipakai untuk semua kartu.
 

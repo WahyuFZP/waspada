@@ -29,7 +29,7 @@ export function AttackerIps({ events, loaded }: { events: Event[]; loaded: boole
 
   return (
     <section aria-labelledby="ip-title" className="flex flex-col gap-3">
-      <h2 id="ip-title" className="font-display text-3xl font-bold">
+      <h2 id="ip-title" className="font-pixel text-xl font-bold md:text-2xl">
         Asal IP penyerang
       </h2>
       {!loaded && <p className="text-ink-muted">Memuat kejadian…</p>}
@@ -41,7 +41,7 @@ export function AttackerIps({ events, loaded }: { events: Event[]; loaded: boole
       )}
       {rows.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-line">
-          <table className="w-full min-w-[620px] text-left text-sm">
+          <table className="w-full min-w-[620px] text-left text-base">
             <thead className="font-data text-xs text-ink-muted">
               <tr className="border-b border-line">
                 <th className="px-4 py-3 font-normal">IP sumber</th>

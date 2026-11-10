@@ -54,11 +54,11 @@ function Handling({ alert, onUpdated }: { alert: Alert; onUpdated: (a: Alert) =>
             maxLength={1000}
             rows={3}
             placeholder="mis. IP diblokir di firewall, akun direset, satuan dihubungi"
-            className="rounded-md border border-line bg-bg px-3 py-2 text-sm placeholder:text-ink-muted/60"
+            className="rounded-md border border-line bg-bg px-3 py-2 text-base placeholder:text-ink-muted/60"
           />
         </label>
         {error && (
-          <p role="alert" className="text-sm text-sev-critical">
+          <p role="alert" className="text-base text-sev-critical">
             {error}
           </p>
         )}
@@ -77,12 +77,12 @@ function Handling({ alert, onUpdated }: { alert: Alert; onUpdated: (a: Alert) =>
               <p className="font-data flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                 <StatusBadge status={h.status} /> {formatTime(h.timestamp)}
               </p>
-              {h.note && <p className="mt-1 text-sm">{h.note}</p>}
+              {h.note && <p className="mt-1 text-base">{h.note}</p>}
             </li>
           ))}
         </ol>
       ) : (
-        <p className="mt-3 text-sm text-ink-muted">Belum ada tindakan tercatat.</p>
+        <p className="mt-3 text-base text-ink-muted">Belum ada tindakan tercatat.</p>
       )}
     </section>
   );
@@ -146,7 +146,7 @@ export function AlertDetail({
                   <StatusBadge status={alert.status} />
                   <span className="font-data text-xs text-ink-muted">{formatTime(alert.timestamp)}</span>
                 </div>
-                <h2 id="detail-title" className="font-display mt-2 text-3xl font-bold leading-tight md:text-4xl">
+                <h2 id="detail-title" className="font-body mt-2 text-2xl font-bold leading-tight md:text-3xl">
                   {alert.rule}
                 </h2>
                 <p className="mt-2 text-ink-muted">

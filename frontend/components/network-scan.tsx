@@ -14,13 +14,19 @@ const NODES = [
 ];
 const SWEEP = 3200; // ms satu kali sapuan pindai dari atas ke bawah
 
+// garis bertingkat siku (gaya piksel): mendatar dari hub, lalu tegak ke perangkat
+const link = (n: { x: number; y: number }) => `M${HUB.x} ${HUB.y} H${n.x} V${n.y}`;
+
 // Ilustrasi: perangkat satuan terhubung ke WASPADA, paket data mengalir, garis pindai menyapu dan menandai tiap perangkat.
 export function NetworkScan() {
   const root = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    const scope = createScope({ root, mediaQueries: { reduce: "(prefers-reduced-motion: reduce)" } }).add((self) => {
-      if (self?.matches.reduce) return; // diam: jaringan tetap terlihat utuh tanpa gerak
+    const scope = createScope({
+      root,
+      mediaQueries: { reduce: "(prefers-reduced-motion: reduce)", small: "(max-width: 767px)" },
+    }).add((self) => {
+      if (self?.matches.reduce || self?.matches.small) return; // diam: jaringan tetap terlihat utuh tanpa gerak
 
       animate(createDrawable(".link"), { draw: ["0 0", "0 1"], duration: 1200, delay: stagger(120), ease: "outQuad" });
 
@@ -59,74 +65,76 @@ export function NetworkScan() {
   const origin = { transformBox: "fill-box", transformOrigin: "center" } as const;
 
   return (
-    <svg ref={root} viewBox="0 0 480 360" role="img" aria-labelledby="netscan-title" className="h-auto w-full">
+    <svg
+      ref={root}
+      viewBox="0 0 480 360"
+      role="img"
+      aria-labelledby="netscan-title"
+      className="h-auto w-full"
+      shapeRendering="crispEdges"
+    >
       <title id="netscan-title">
         Enam perangkat jaringan terhubung ke WASPADA dan dipindai berkala; satu ponsel ditandai mencurigakan.
       </title>
-      <defs>
-        <linearGradient id="beam-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--color-siber-bright)" stopOpacity="0" />
-          <stop offset="1" stopColor="var(--color-siber-bright)" stopOpacity="0.28" />
-        </linearGradient>
-      </defs>
 
       {NODES.map((n) => (
         <path
           key={`l-${n.label}`}
           className="link"
-          d={`M${HUB.x} ${HUB.y} L${n.x} ${n.y}`}
-          stroke={n.threat ? "var(--color-sev-critical)" : "var(--color-siber)"}
-          strokeWidth="1.5"
-          strokeDasharray={n.threat ? "4 4" : undefined}
+          d={link(n)}
+          stroke={n.threat ? "var(--color-sev-critical)" : "var(--color-ink-muted)"}
+          strokeWidth="2"
+          strokeDasharray={n.threat ? "6 6" : undefined}
+          strokeLinecap="square"
           fill="none"
         />
       ))}
 
       {NODES.map((n, i) => (
-        <circle key={`p-${n.label}`} className={`packet-${i}`} r="3.5" fill="var(--color-gold)" opacity="0" />
+        <rect key={`p-${n.label}`} className={`packet-${i}`} x="-4" y="-4" width="8" height="8" fill="var(--color-ink)" opacity="0" />
       ))}
 
       <g className="beam" style={{ transform: "translateY(-60px)" }}>
-        <rect x="0" y="0" width="480" height="60" fill="url(#beam-fill)" />
-        <line x1="0" y1="60" x2="480" y2="60" stroke="var(--color-siber-bright)" strokeWidth="1.5" />
+        <rect x="0" y="0" width="480" height="60" fill="var(--color-ink)" fillOpacity="0.06" />
+        <rect x="0" y="58" width="480" height="2" fill="var(--color-ink-muted)" />
       </g>
 
       {NODES.map((n) => (
         <g key={n.label} transform={`translate(${n.x} ${n.y})`}>
-          <circle
+          <rect
             className="ring"
             data-y={n.y}
-            r="30"
+            x="-30"
+            y="-30"
+            width="60"
+            height="60"
             fill="none"
-            stroke={n.threat ? "var(--color-sev-critical)" : "var(--color-siber-bright)"}
+            stroke={n.threat ? "var(--color-sev-critical)" : "var(--color-ink-muted)"}
             strokeWidth="2"
             opacity="0"
             style={origin}
           />
-          <rect x="-20" y="-16" width="40" height="27" rx="4" fill="var(--color-surface-2)" stroke="var(--color-line)" />
-          <rect
-            x="-16"
-            y="-12"
-            width="32"
-            height="19"
-            rx="2"
-            fill={n.threat ? "var(--color-sev-critical)" : "var(--color-siber)"}
-            fillOpacity="0.45"
-          />
-          <path d="M-6 15 H6 M0 11 V15" stroke="var(--color-line)" strokeWidth="2" />
-          {n.threat && <circle className="threat" cx="18" cy="-16" r="5" fill="var(--color-sev-critical)" />}
-          <text y="34" textAnchor="middle" className="font-data" fontSize="11" fill="var(--color-ink-muted)">
+          <rect x="-20" y="-16" width="40" height="28" fill="var(--color-surface-2)" stroke="var(--color-ink-muted)" strokeWidth="2" />
+          <rect x="-14" y="-10" width="28" height="16" fill={n.threat ? "var(--color-sev-critical)" : "var(--color-line)"} />
+          <rect x="-8" y="14" width="16" height="4" fill="var(--color-ink-muted)" />
+          {n.threat && <rect className="threat" x="14" y="-22" width="10" height="10" fill="var(--color-sev-critical)" />}
+          <text y="36" textAnchor="middle" className="font-data" fontSize="11" fill="var(--color-ink-muted)">
             {n.label}
           </text>
         </g>
       ))}
 
       <g transform={`translate(${HUB.x} ${HUB.y})`}>
-        <circle className="hub-pulse" r="34" fill="var(--color-siber-bright)" opacity="0" style={origin} />
-        <circle r="34" fill="var(--color-bg)" stroke="var(--color-gold)" strokeWidth="2" />
-        {/* perisai, merujuk lambang satuan */}
-        <path d="M0 -18 L15 -11 V2 C15 11 8 17 0 20 C-8 17 -15 11 -15 2 V-11 Z" fill="var(--color-siber)" stroke="var(--color-gold)" strokeWidth="1.5" />
-        <path d="M-6 1 L-1 6 L7 -4" stroke="var(--color-ink)" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+        <rect className="hub-pulse" x="-34" y="-34" width="68" height="68" fill="var(--color-ink)" opacity="0" style={origin} />
+        <rect x="-34" y="-34" width="68" height="68" fill="var(--color-bg)" stroke="var(--color-ink)" strokeWidth="2" />
+        {/* perisai berpiksel, merujuk lambang satuan */}
+        <path
+          d="M-14 -16 H14 V2 H10 V8 H6 V12 H2 V16 H-2 V12 H-6 V8 H-10 V2 H-14 Z"
+          fill="var(--color-line)"
+          stroke="var(--color-ink)"
+          strokeWidth="2"
+        />
+        <path d="M-6 0 H-2 V4 H2 V0 H6 V-4" stroke="var(--color-ink)" strokeWidth="2" fill="none" strokeLinecap="square" />
       </g>
     </svg>
   );

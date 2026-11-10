@@ -36,7 +36,7 @@ export function CriticalToast({
             <div className="min-w-0 flex-1">
               <p className="font-data text-xs uppercase text-sev-critical">Peringatan kritis</p>
               <p className="font-display text-xl font-semibold leading-tight">{alert.rule}</p>
-              <p className="text-sm text-ink-muted">{groupLabel(alert.group)}. Mohon segera ditinjau.</p>
+              <p className="text-base text-ink-muted">{groupLabel(alert.group)}. Mohon segera ditinjau.</p>
             </div>
             <div className="flex gap-2">
               <button

@@ -34,8 +34,8 @@ export default function LogPage() {
       <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold leading-none">
-              <LogoMark className="h-7 w-7" />
+            <Link href="/" className="flex items-center gap-2 font-pixel text-xl font-bold leading-none">
+              <LogoMark className="h-[34px] w-[34px]" />
               WASPADA
             </Link>
             <ul className="font-data hidden gap-6 text-xs text-ink-muted sm:flex">
@@ -62,13 +62,13 @@ export default function LogPage() {
 
       <main className="mx-auto flex max-w-[1400px] flex-col gap-8 px-4 py-10 md:px-6">
         <Reveal>
-          <h1 className="font-display text-5xl font-bold leading-none md:text-6xl">Log keamanan</h1>
+          <h1 className="font-pixel text-3xl font-bold leading-tight md:text-4xl">Log keamanan</h1>
           <p className="mt-3 max-w-3xl text-ink-muted md:text-lg">
             Baris log asli dari server satuan (login SSH dan peringatan Suricata), dikirim pengirim log secara live.
             Setiap baris diberi asal IP, lalu dicocokkan mesin korelasi untuk mendeteksi brute force dan intrusi.
           </p>
           {status === "reconnecting" && !loaded && (
-            <p role="alert" className="mt-4 rounded-lg border border-sev-critical/50 bg-sev-critical/10 p-4 text-sm">
+            <p role="alert" className="mt-4 rounded-lg border border-sev-critical/50 bg-sev-critical/10 p-4 text-base">
               Server pemantauan di <span className="font-data">{API}</span> belum dapat dijangkau. Pastikan backend aktif
               (<span className="font-data">docker compose up</span>). Sistem akan menyambung ulang secara otomatis.
             </p>
@@ -100,10 +100,10 @@ export default function LogPage() {
 
         <Reveal>
           <section aria-labelledby="ship-title" className="slab rounded-2xl border border-line bg-surface p-5 md:p-6">
-            <h2 id="ship-title" className="font-display text-2xl font-bold">
+            <h2 id="ship-title" className="font-body text-xl font-bold md:text-2xl">
               Mengirim log dari server satuan
             </h2>
-            <p className="mt-2 max-w-3xl text-sm text-ink-muted">
+            <p className="mt-2 max-w-3xl text-base text-ink-muted">
               Salin <span className="font-data text-ink">shipper/waspada_shipper.py</span> ke server (cukup Python 3.8,
               tanpa instalasi tambahan), lalu jalankan dengan token yang sama dengan <span className="font-data text-ink">INGEST_TOKEN</span>{" "}
               di backend. Pengirim membaca baris baru, tahan rotasi log, dan menyimpan antrean bila SIEM sedang tidak terjangkau.

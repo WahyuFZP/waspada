@@ -22,8 +22,9 @@
 /* inline: variabel next/font dipasang di <body>, jadi utilitas harus merujuknya langsung, bukan lewat :root */
 @theme inline {
   --font-display: var(--font-barlow-condensed), sans-serif;
-  --font-body: var(--font-public-sans), sans-serif;
+  --font-body: var(--font-pixelify), sans-serif;
   --font-data: var(--font-plex-mono), monospace;
+  --font-pixel: var(--font-silkscreen), monospace;
 }
 
 html {
@@ -34,7 +35,8 @@ html {
 body {
   background: var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-public-sans), sans-serif;
+  font-family: var(--font-pixelify), sans-serif;
+  line-height: 1.6; /* font piksel butuh jarak baris lebih lega agar kalimat panjang tetap mudah diikuti */
 }
 
 :focus-visible {
@@ -45,6 +47,59 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+}
+
+/* Landing bergaya piksel 8-bit: sudut tajam, bayangan offset keras yang "kempis" saat ditekan. */
+.px-block {
+  border: 2px solid var(--color-line);
+  box-shadow: 4px 4px 0 0 var(--color-line);
+}
+.px-press {
+  transition: none; /* piksel berpindah per bingkai, bukan meluncur */
+}
+.px-block.px-press:hover {
+  border-color: var(--color-ink-muted);
+  box-shadow: 4px 4px 0 0 var(--color-ink-muted);
+}
+.px-press:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+/* kursor kedip setelah judul dan denyut angka kritis: gerak per bingkai (steps), mati saat reduce motion & layar kecil */
+@keyframes px-blink {
+  to {
+    visibility: hidden;
+  }
+}
+/* kentongan berayun sekali dari gantungannya, 3 bingkai per ayunan, lalu diam */
+@keyframes px-swing {
+  20% {
+    transform: rotate(16deg);
+  }
+  40% {
+    transform: rotate(-11deg);
+  }
+  60% {
+    transform: rotate(6deg);
+  }
+  80% {
+    transform: rotate(-3deg);
+  }
+}
+.px-swing {
+  transform-box: view-box;
+  transform-origin: 8px 0;
+}
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .px-swing {
+    animation: px-swing 2.4s steps(3, end) 0.45s 1;
+  }
+  .px-cursor {
+    animation: px-blink 1s steps(2, start) infinite;
+  }
+  .px-pulse {
+    animation: px-blink 1.4s steps(2, start) infinite;
   }
 }
 
