@@ -57,7 +57,7 @@ body {
 .px-press {
   transition: none; /* piksel berpindah per bingkai, bukan meluncur */
 }
-.px-press:hover {
+.px-block.px-press:hover {
   border-color: var(--color-ink-muted);
   box-shadow: 4px 4px 0 0 var(--color-ink-muted);
 }

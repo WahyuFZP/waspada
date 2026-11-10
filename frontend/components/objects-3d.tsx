@@ -2,6 +2,7 @@
 
 import { animate, createScope, createTimeline, stagger, utils } from "animejs";
 import { useEffect, useRef, type ReactNode } from "react";
+import { LogoMark } from "./logo-mark";
 
 // Objek 3D tanpa WebGL: wajah SVG ditumpuk `depth` lapis sepanjang sumbu Z (1px per lapis), sehingga terlihat tebal
 // saat dimiringkan dengan perspektif CSS. Lapis depan berwarna terang, lapis belakang lebih gelap sebagai sisi objek.
@@ -16,39 +17,10 @@ function Stack({ depth, layer }: { depth: number; layer: (front: boolean) => Rea
 const reduceMotion = { reduce: "(prefers-reduced-motion: reduce)" };
 const preserve = { transformStyle: "preserve-3d" } as const;
 
-// Kentongan berpiksel di kisi 16×16: tiap rect = deretan piksel. Bayangan = bentuk yang sama digeser 1 piksel,
-// senada dengan bayangan offset keras di kartu landing.
-const KENTONGAN = [
-  [7, 0, 2, 2], // gantungan
-  [5, 2, 6, 1],
-  [4, 3, 8, 1],
-  [3, 4, 10, 10], // badan
-  [4, 14, 8, 1],
-  [5, 15, 6, 1],
-];
-const HANDLES = [
-  [1, 6, 2, 7],
-  [13, 6, 2, 7],
-];
-const px = (parts: number[][], fill: string, dx = 0) =>
-  parts.map(([x, y, w, h]) => <rect key={`${fill}-${x}-${y}`} x={x + dx} y={y + dx} width={w} height={h} fill={fill} />);
-
-// Logo WASPADA sebagai kentongan pos ronda yang digantung, gaya piksel 8-bit. Saat halaman dibuka ia berayun sekali
-// lalu diam, seperti baru dipukul: peringatan dibunyikan. Ayunan per bingkai (steps) ada di globals.css (.px-swing).
+// Logo WASPADA besar di landing: kentongan berpiksel yang sama dengan logo navigasi (LogoMark). Saat halaman dibuka
+// ia berayun sekali lalu diam, seperti baru dipukul: peringatan dibunyikan (per bingkai, .px-swing di globals.css).
 export function Kentongan3D({ className = "" }: { className?: string }) {
-  return (
-    <svg role="img" aria-label="Logo WASPADA: kentongan" viewBox="0 0 17 17" shapeRendering="crispEdges" className={className}>
-      <g className="px-swing">
-        {/* warna identitas WASPADA: badan hijau perisai, pegangan emas; sisi gelap = bayangan 1 piksel */}
-        {px(KENTONGAN, "var(--color-siber)", 1)}
-        {px(HANDLES, "var(--color-gold-deep)", 1)}
-        {px(KENTONGAN, "var(--color-siber-bright)")}
-        <rect x="4" y="4" width="1" height="9" fill="var(--color-ink)" fillOpacity="0.55" /> {/* kilap tepi kiri */}
-        {px(HANDLES, "var(--color-gold)")}
-        <rect x="7" y="5" width="2" height="8" fill="var(--color-bg)" /> {/* celah kentongan */}
-      </g>
-    </svg>
-  );
+  return <LogoMark className={className} label="Logo WASPADA: kentongan" swing />;
 }
 
 // Lima kelompok pemeriksaan Pemeriksa APK (aturan R01–R14), keluar-masuk dari layar ponsel. Isinya apa yang

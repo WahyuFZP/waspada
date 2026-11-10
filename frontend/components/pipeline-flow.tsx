@@ -47,13 +47,13 @@ export function PipelineFlow({ events, alerts, loaded }: { events: Event[]; aler
     <section aria-label="Alur korelasi" className="mx-auto mb-10 max-w-[1400px] px-4 md:px-6">
       <div className="relative">
         {/* rel penghubung antar tahap */}
-        <div aria-hidden className="absolute left-[12.5%] right-[12.5%] top-5 h-px bg-line" />
+        <div aria-hidden className="absolute left-[12.5%] right-[12.5%] top-5 h-0.5 -translate-y-1/2 bg-line" />
         <AnimatePresence>
           {packets.map((p, i) => (
             <motion.span
               key={p.id}
               aria-hidden
-              className={`absolute top-5 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ${
+              className={`absolute top-5 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 ${
                 p.kind === "alert" ? "bg-sev-critical" : "bg-gold"
               }`}
               initial={{ left: `${p.kind === "alert" ? X[2] : X[0]}%`, opacity: 0 }}
@@ -68,8 +68,8 @@ export function PipelineFlow({ events, alerts, loaded }: { events: Event[]; aler
           {STAGES.map((s, i) => (
             <li key={s.name} className="flex flex-col items-center text-center">
               <span
-                className={`slab font-data relative z-10 flex h-10 w-10 items-center justify-center rounded-lg border text-xs ${
-                  i === 3 ? "border-gold/60 bg-surface text-gold" : "border-siber/70 bg-surface text-siber-bright"
+                className={`font-pixel relative z-10 flex h-10 w-10 items-center justify-center border-2 text-xs shadow-[3px_3px_0_0_var(--color-line)] ${
+                  i === 3 ? "border-gold bg-surface text-gold" : "border-siber bg-surface text-siber-bright"
                 }`}
               >
                 {String(i + 1).padStart(2, "0")}

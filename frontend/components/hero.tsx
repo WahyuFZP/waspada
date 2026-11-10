@@ -13,11 +13,17 @@ const rise = (delay: number) => ({
 export function Hero({ status, pulseKey }: { status: StreamStatus; pulseKey: string | null }) {
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden px-4 pb-16 pt-14 md:pb-24 md:pt-20">
-      {/* satu glow sebagai titik fokus di belakang judul (disetujui pemilik), hijau perisai Pussiberad */}
-      <div
-        aria-hidden
-        className="absolute left-1/2 top-1/2 -z-10 h-[520px] w-[820px] max-w-[160vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(63,122,64,0.45),transparent_65%)] blur-2xl"
-      />
+      {/* latar kisi piksel, seragam dengan landing; menggantikan glow blur. Judul tetap font tegak agar mudah dibaca */}
+      <svg aria-hidden className="absolute inset-0 -z-20 h-full w-full" shapeRendering="crispEdges">
+        <defs>
+          <pattern id="hero-px-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+            <rect width="32" height="2" fill="var(--color-surface-2)" />
+            <rect width="2" height="32" fill="var(--color-surface-2)" />
+            <rect width="4" height="4" fill="var(--color-line)" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#hero-px-grid)" />
+      </svg>
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-1/2 -z-10 aspect-square w-[min(720px,140vw)] -translate-x-1/2 -translate-y-1/2 opacity-80"
@@ -43,15 +49,16 @@ export function Hero({ status, pulseKey }: { status: StreamStatus; pulseKey: str
           sebelum analis harus menyaring ribuan kejadian secara manual.
         </motion.p>
         <motion.div className="mt-8 flex flex-wrap justify-center gap-3" {...rise(0.35)}>
+          {/* tombol blok piksel: bayangan offset keras yang kempis saat ditekan (.px-press) */}
           <a
             href="#pemantauan"
-            className="font-data inline-flex min-h-12 items-center rounded-lg bg-gold px-5 text-sm font-medium text-bg transition hover:brightness-110"
+            className="px-press font-pixel inline-flex min-h-12 items-center border-2 border-gold bg-gold px-5 text-xs uppercase text-bg shadow-[4px_4px_0_0_var(--color-gold-deep)] hover:brightness-110"
           >
             Buka pemantauan langsung
           </a>
           <a
             href="#arus-berita"
-            className="font-data inline-flex min-h-12 items-center rounded-lg border border-line bg-white/[0.03] px-5 text-sm transition hover:bg-white/[0.07]"
+            className="px-block px-press font-pixel inline-flex min-h-12 items-center bg-surface px-5 text-xs uppercase"
           >
             Lihat arus berita
           </a>

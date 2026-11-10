@@ -39,15 +39,20 @@ Severity selalu ditulis dengan label teks, bukan hanya warna:
 | medium | SEDANG | `sev-medium` `#EADB5B` |
 | low | RENDAH | `sev-low` `#9AA08A` |
 
-## Tipografi: tiga font, tiga peran
+## Tipografi: empat font, empat peran
 
 | Peran | Font | Kelas | Alasan |
 |---|---|---|---|
 | Headline | Barlow Condensed (600/700) | `font-display` | Huruf rapat bergaya papan penanda; tegas dan hemat ruang di layar lebar |
 | Deskripsi | Public Sans (400/500) | `font-body` (default `body`) | Sans netral dari sistem desain pemerintahan; resmi dan mudah dibaca untuk judul berita |
 | Pesan kecil | IBM Plex Mono (400/500) | `font-data` | Label, waktu, sumber, badge; angka sejajar sehingga timestamp terbaca rapi |
+| Aksen piksel | Silkscreen (400/700) | `font-pixel` | Nama merek di navigasi, tombol, nomor tahap, judul landing; menyambung tema piksel 8-bit |
 
-Aturan: tidak ada font keempat. Teks yang bukan headline dan bukan deskripsi memakai `font-data`.
+Aturan: tidak ada font kelima. Teks yang bukan headline dan bukan deskripsi memakai `font-data`. `font-pixel` hanya untuk teks pendek: headline panjang dan paragraf tetap memakai font tegak agar juri dan analis tidak perlu menebak isi.
+
+### Gaya piksel ringan (di luar landing)
+
+Landing memakai tema piksel penuh. Halaman kerja (pemantauan, log, APK) hanya memakai bingkainya: logo kentongan berpiksel (`LogoMark`, tajam di 34px), nama merek `font-pixel`, tombol blok bersudut tajam dengan bayangan offset yang kempis saat ditekan, nomor tahap persegi, titik status persegi, dan latar kisi piksel di hero. Headline, paragraf, dan panel data tetap seperti biasa supaya mudah dibaca.
 
 ## Nada bahasa
 

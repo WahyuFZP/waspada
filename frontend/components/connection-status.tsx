@@ -10,7 +10,7 @@ export function ConnectionStatus({ status }: { status: StreamStatus }) {
   const s = STATUS[status];
   return (
     <p role="status" className={`font-data flex items-center gap-2 text-xs ${s.text}`}>
-      <span aria-hidden className={`h-2 w-2 rounded-full ${s.dot}`} />
+      <span aria-hidden className={`h-2 w-2 ${s.dot}`} />
       {s.label}
     </p>
   );
