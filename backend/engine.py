@@ -29,13 +29,13 @@ def matches(event, match):
 
 def satisfied(events, steps):
     """Kembalikan event pendukung jika semua langkah terpenuhi berurutan, else None."""
-    support, i = [], 0
+    support, used, i = [], set(), 0
     for step in steps:
         hits = []
         while i < len(events):
             e = events[i]
             i += 1
-            if not matches(e, step["match"]):
+            if id(e) in used or not matches(e, step["match"]):
                 continue
             hits.append(e)
             enough = len(hits) >= step.get("count", 1)
@@ -46,6 +46,11 @@ def satisfied(events, steps):
         else:
             return None
         support += hits
+        used.update(map(id, hits))
+        # langkah berikutnya boleh memakai event dengan timestamp SAMA: auth.log hanya beresolusi detik,
+        # jadi event dari sumber berbeda dalam detik yang sama tidak punya urutan pasti
+        last = hits[-1]["timestamp"]
+        i = next(j for j, x in enumerate(events) if x["timestamp"] >= last)
     return support
 
 

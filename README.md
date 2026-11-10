@@ -18,7 +18,7 @@ Semua data demo **sintetis** (`demo: true`, tampil berlabel "Simulasi") atau ber
 | Normalisasi | `backend/normalize.py`, `backend/parsers.py`, `topics.yaml`, `assets.yaml` | Semua sumber → satu skema event (lihat di bawah) |
 | GeoIP | `backend/geoip.py`, `geoip_fetch.py` | IP sumber diberi negara & pemilik jaringan dari DB-IP Lite (CC BY 4.0), dibaca offline |
 | Korelasi | `backend/engine.py` + `rules.yaml` | Sliding window per `group_by`, rule = urutan langkah (threshold / sequence / cross-source), plus teknik MITRE ATT&CK |
-| Output | `backend/notify.py`, `backend/store.py` (PostgreSQL, JSONB), SSE | Discord webhook, tabel `alerts`, stream real-time ke dashboard |
+| Output | `backend/notify.py`, `backend/store.py` (PostgreSQL, JSONB), SSE | Discord webhook, WhatsApp (OpenWA, high/critical), tabel `alerts`, stream real-time ke dashboard |
 
 Rule, kamus topik, dan inventaris aset ada di YAML: tambah rule tanpa menyentuh engine (restart backend setelah mengubah YAML).
 Window dihitung dari **timestamp event**, bukan jam dinding, jadi replay demo deterministik.
@@ -105,6 +105,11 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    ABUSECH_AUTH_KEY=
    # token rahasia untuk pengirim log; wajib bila backend dibuka ke jaringan lain
    INGEST_TOKEN=
+   # alert high/critical ke WhatsApp lewat OpenWA (lihat "Alert ke WhatsApp"); kosong = nonaktif
+   OPENWA_URL=
+   OPENWA_API_KEY=
+   OPENWA_SESSION=
+   WA_ALERT_CHAT=
    ```
 
 3. Jalankan backend, database, dan scanner APK (build pertama butuh beberapa menit):
@@ -198,6 +203,26 @@ Pengirim membaca baris baru seperti `tail -F` (tahan rotasi dan truncate log), m
 Jalankan replay `intrusi.jsonl` **sebelum** `kev.py`: event KEV dari skenario memakai URL yang sama dengan hasil `kev.py`, sehingga yang datang belakangan dibuang sebagai duplikat.
 
 Mulai demo dari data kosong: `docker compose down -v` lalu `docker compose up -d` lagi. **Perhatian:** `-v` menghapus semua volume, termasuk database SIEM **dan** riwayat scan APK.
+
+### Alert ke WhatsApp (opsional)
+
+Alert `high` dan `critical` bisa dikirim ke WhatsApp lewat [OpenWA](https://github.com/rmyndharis/OpenWA), gateway WhatsApp self-hosted (MIT). Pesan WA hanya berisi ringkasan (severity, rule, host/IP, MITRE, jumlah kejadian) dan tautan ke dashboard, tanpa baris log mentah.
+
+**Sebelum memakai:** OpenWA tidak resmi (meniru WhatsApp Web), jadi nomor pengirim bisa dibatasi atau diblokir WhatsApp. Pakai **nomor khusus**, bukan nomor pribadi. Isi pesan juga melewati server Meta: untuk lingkungan produksi militer, ganti ke kanal internal atau WhatsApp Cloud API resmi.
+
+1. Jalankan OpenWA dari repo-nya sendiri, di folder terpisah dari WASPADA, dengan engine Baileys (ringan, tanpa Chromium). Ikuti README OpenWA; dashboard dan API ada di http://localhost:2785, Swagger di `/api/docs`.
+2. Ambil API key dari log pertama OpenWA, buat session, lalu scan QR-nya dengan WhatsApp di HP nomor khusus tadi (Perangkat tertaut).
+3. Tentukan penerima: nomor `628xxxxxxxxxx@c.us` atau ID grup `...@g.us` (lihat daftar chat di dashboard OpenWA).
+4. Isi `.env` WASPADA, lalu `docker compose up -d backend`:
+
+   ```
+   OPENWA_URL=http://host.docker.internal:2785
+   OPENWA_API_KEY=<api key OpenWA>
+   OPENWA_SESSION=<id session>
+   WA_ALERT_CHAT=<nomor atau grup penerima>
+   ```
+
+Bila OpenWA mati atau menolak, alert tetap tersimpan dan tampil di dashboard; kegagalan hanya dicatat di log backend.
 
 URL backend untuk dashboard bisa diganti lewat `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`) dan `NEXT_PUBLIC_APK_API_URL` (default `http://localhost:8001`).
 

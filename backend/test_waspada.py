@@ -4,7 +4,8 @@ from pathlib import Path
 
 # DB terpisah (dibuat oleh db/init.sql) supaya test tidak menghapus data demo
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada_test")
-os.environ.pop("DISCORD_WEBHOOK_URL", None)
+for _k in ("DISCORD_WEBHOOK_URL", "OPENWA_URL", "OPENWA_API_KEY", "OPENWA_SESSION", "WA_ALERT_CHAT"):
+    os.environ.pop(_k, None)  # test tidak boleh mengirim ke Discord atau WA sungguhan
 
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -51,6 +52,43 @@ def test_source_url_must_be_http_and_reaches_discord():
     event = normalize({**art, "url": "https://example.com/berita/1"}, load_topics())[0]
     alert = {"rule": "r", "severity": "high", "group": {"topic": "papua"}, "timestamp": art["timestamp"], "events": [event]}
     assert "[Insiden di Papua](https://example.com/berita/1)" in discord_payload(alert)["embeds"][0]["description"]
+
+
+def test_whatsapp_only_for_urgent_alerts_and_only_when_configured(monkeypatch):
+    from notify import targets
+    alert = {"rule": "Pemindaian diikuti login berhasil", "severity": "critical", "timestamp": "2026-11-10T02:00:00Z",
+             "group": {"host": "srv-latihan", "src_ip": "172.18.0.7"}, "mitre": [{"id": "T1046", "name": "x"}],
+             "events": [{"title": "baris log mentah yang tidak boleh ikut"}]}
+    for k in ("OPENWA_URL", "OPENWA_API_KEY", "OPENWA_SESSION", "WA_ALERT_CHAT"):
+        monkeypatch.delenv(k, raising=False)
+    assert targets(alert) == []  # tanpa env: tidak ada kanal
+
+    monkeypatch.setenv("OPENWA_URL", "http://host.docker.internal:2785/")
+    monkeypatch.setenv("OPENWA_API_KEY", "kunci-uji")
+    monkeypatch.setenv("OPENWA_SESSION", "waspada alert")
+    monkeypatch.setenv("WA_ALERT_CHAT", "120363000000000000@g.us")
+    [(name, url, payload, headers)] = targets(alert)
+    assert url == "http://host.docker.internal:2785/api/sessions/waspada%20alert/messages/send-text"
+    assert headers == {"X-API-Key": "kunci-uji"} and payload["chatId"] == "120363000000000000@g.us"
+    assert "Pemindaian diikuti login berhasil" in payload["text"] and "T1046" in payload["text"]
+    assert "baris log mentah" not in payload["text"]
+    assert targets({**alert, "severity": "medium"}) == []  # medium tidak dikirim ke WA
+
+
+def test_sequence_matches_events_in_the_same_second_regardless_of_arrival_order():
+    # serangan cepat: nmap dan login dalam detik yang sama, dan pengirim mengirim auth.log sebelum eve.json
+    from engine import Engine, load_rules
+    engine = Engine([r for r in load_rules() if r["name"] == "Pemindaian diikuti login berhasil"])
+    base = {"timestamp": "2026-11-10T01:34:00Z", "host": "srv-latihan", "src_ip": "172.18.0.9"}
+    assert engine.process({**base, "event_type": "auth.success"}) == []
+    alerts = [a for port in (21, 23, 80, 443, 3389) for a in engine.process({**base, "event_type": "ids.scan", "dest_port": port})]
+    assert [a["rule"] for a in alerts] == ["Pemindaian diikuti login berhasil"]
+    assert [e["event_type"] for e in alerts[0]["events"]] == ["ids.scan"] * 5 + ["auth.success"]
+
+    # login yang jelas SEBELUM pemindaian tetap tidak dihitung
+    engine = Engine(engine.rules)
+    engine.process({**base, "timestamp": "2026-11-10T01:33:00Z", "event_type": "auth.success"})
+    assert [a for port in (21, 23, 80, 443, 3389) for a in engine.process({**base, "event_type": "ids.scan", "dest_port": port})] == []
 
 
 def test_auth_parser_reads_sshd_and_ignores_other_lines():

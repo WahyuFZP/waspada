@@ -21,9 +21,16 @@ services:
       DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada
       TEST_DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada_test
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      # alert high/critical ke WhatsApp lewat OpenWA (dijalankan terpisah); kosong = WA nonaktif
+      OPENWA_URL: ${OPENWA_URL:-}
+      OPENWA_API_KEY: ${OPENWA_API_KEY:-}
+      OPENWA_SESSION: ${OPENWA_SESSION:-}
+      WA_ALERT_CHAT: ${WA_ALERT_CHAT:-}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
       # wajib diisi bila /ingest dibuka untuk pengirim log di server lain; kosong = tanpa autentikasi (lokal saja)
       INGEST_TOKEN: ${INGEST_TOKEN:-}
     ports: ["127.0.0.1:8000:8000"]
+    extra_hosts: ["host.docker.internal:host-gateway"]  # agar OpenWA di host terjangkau juga di Linux/VPS
     volumes: ["./backend:/app"]  # kode live; --reload memuat ulang saat file diubah
     # graceful timeout: stream SSE tidak pernah selesai sendiri, tanpa ini --reload menunggu selamanya
     command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2
