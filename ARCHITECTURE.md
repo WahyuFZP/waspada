@@ -48,6 +48,7 @@ flowchart LR
 | `ssh-target` | Alpine, OpenSSH | 127.0.0.1:2222 | Server latihan untuk demo; menulis `auth.log` asli ke volume `demolog`. Login berhasil tidak mendapat shell |
 | `suricata` | Suricata 8.0.7 | - | Sensor IDS yang berbagi jaringan dengan `ssh-target`; menulis alert ke `eve.json` di volume `idslog` |
 | `log-shipper` | Python 3.12, hanya stdlib | - | Membaca `auth.log` dan `eve.json` server latihan seperti `tail -F` dan mengirimnya ke `/ingest` |
+| `rss-poller` | Python 3.12 (image backend) | - | Menjalankan `rss.py`: polling 34 feed setiap 5 menit, mulai setelah backend sehat |
 | dashboard | Next.js 15, React 19, Tailwind 4, motion, anime.js | 3000 (`npm run dev`) | Landing, `/pemantauan`, `/log`, `/apk` |
 
 ## 2. Pemantauan SIEM
@@ -66,7 +67,7 @@ flowchart LR
   A --> W[Discord / WhatsApp]
 ```
 
-1. **Ingest** (`app.py`): record masuk lewat `POST /ingest`. Sumbernya `rss.py` (polling 34 feed setiap 5 menit: 21 media berita dan 13 media teknologi/siber dalam dan luar negeri), `kev.py` (katalog CISA KEV × `assets.yaml`), `replay.py` (skenario demo), atau log yang dikirim langsung.
+1. **Ingest** (`app.py`): record masuk lewat `POST /ingest`. Sumbernya `rss.py` (service `rss-poller`, polling 34 feed setiap 5 menit: 21 media berita dan 13 media teknologi/siber dalam dan luar negeri), `kev.py` (katalog CISA KEV × `assets.yaml`), `replay.py` (skenario demo), atau log yang dikirim langsung.
 2. **Normalisasi** (`normalize.py`, `parsers.py`): setiap sumber dipetakan ke satu skema event. Berita dicocokkan ke topik dan kategori dari `topics.yaml`; IP tujuan Suricata dipetakan ke nama aset lewat `assets.yaml`.
 3. **GeoIP** (`geoip.py`): event dengan `src_ip` diberi negara dan pemilik jaringan dari DB-IP Lite. Database diunduh saat build image (`geoip_fetch.py`) dan dibaca offline. IP internal dan rentang khusus diberi label, tidak ditebak.
 4. **Deduplikasi**: event dengan `url` yang sudah tersimpan dibuang.
@@ -135,7 +136,7 @@ Dashboard hanya menampilkan data; semua logika deteksi ada di backend. Arah desa
 | Jaringan | Semua port Docker hanya terikat ke `127.0.0.1`; perangkat lain di Wi-Fi tidak bisa menjangkau API atau database |
 | Token ingest | Bila `INGEST_TOKEN` diatur, `POST /ingest` wajib membawa header `X-Ingest-Token` yang sama (dibandingkan dengan `hmac.compare_digest`); tanpa itu `401`. Wajib diisi sebelum backend dibuka ke jaringan lain |
 | Penanganan alert | Riwayat `handling` hanya bertambah (jejak audit). Belum ada login, jadi riwayat tidak mencatat siapa analisnya dan `PATCH /alerts/{id}` hanya aman selama backend terikat `127.0.0.1` |
-| Container log-shipper | Filesystem read-only, log di-mount read-only, semua capability dicabut, `no-new-privileges` |
+| Container log-shipper dan rss-poller | Filesystem read-only, kode dan log di-mount read-only, semua capability dicabut, `no-new-privileges` |
 | Batas kepercayaan | Record `/ingest` dan file APK divalidasi sebelum diproses; URL berita hanya `http`/`https`; nama file dari pengguna dibuang |
 | Container scanner | User non-root, kode di-mount read-only, filesystem read-only, semua capability dicabut, `no-new-privileges` |
 | Data keluar | Hanya hash APK ke MalwareBazaar (bila kunci diatur), alert ke Discord (bila webhook diatur), dan ringkasan alert high/critical ke WhatsApp lewat OpenWA (bila diatur; berisi rule, host, dan IP, melewati server Meta, tanpa log mentah). IP penyerang tidak dikirim ke layanan GeoIP mana pun |

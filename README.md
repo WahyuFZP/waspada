@@ -119,7 +119,7 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    docker compose ps
    ```
 
-   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `suricata`, `log-shipper`) harus berstatus `Up`, dan `db` berstatus `healthy`.
+   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `suricata`, `log-shipper`, `rss-poller`) harus berstatus `Up`, dan `db` serta `backend` berstatus `healthy`.
 
 4. Jalankan dashboard di terminal lain:
 
@@ -171,8 +171,11 @@ Sumber nyata:
 
 ```bash
 docker compose exec backend python kev.py   # katalog CISA KEV terbaru x assets.yaml (aman diulang)
-docker compose exec backend python rss.py   # polling 34 feed (berita + teknologi/siber) setiap 5 menit (feeds.yaml)
 ```
+
+Berita live dari 34 feed (`backend/feeds.yaml`) dibaca otomatis oleh service **`rss-poller`** setiap 5 menit, mulai begitu backend siap. Hentikan sementara bila perlu menjaga kuota WA: `docker compose stop rss-poller`, lalu `docker compose start rss-poller`.
+
+Semua service memakai `restart: unless-stopped`: setelah Docker atau laptop restart, service menyala lagi sendiri, kecuali yang dihentikan manual dengan `docker compose stop`.
 
 ### Log nyata: pengirim log dan server SSH latihan
 
