@@ -71,7 +71,8 @@ Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/
 | Event / alert baru dari stream | **Alur korelasi** (Ingest → Normalisasi → Korelasi → Peringatan): paket emas per event menuju Korelasi, paket merah per alert menuju Peringatan. Tanpa data baru, alur diam |
 | Panel pemantauan masuk layar | Naik halus sekali (scroll reveal) |
 | Section lain masuk layar (alur korelasi, kotak unggah, riwayat, detail hasil scan) | Naik halus sekali, komponen `Reveal` |
-| Landing dibuka | Kentongan 3D berayun sekali lalu diam, seperti baru dipukul: peringatan dibunyikan |
+| Landing dibuka | Kentongan berpiksel berayun sekali dari gantungannya, per bingkai (`steps`), lalu diam, seperti baru dipukul: peringatan dibunyikan. Mati saat reduce motion dan di layar < 768px |
+| Landing digulir | Kentongan berayun mulus ke kanan-kiri dari gantungannya mengikuti kecepatan gulir, seperti gantungan kunci: bergoyang beberapa kali lalu diam, tanpa gerak naik-turun. Satu-satunya gerak halus di landing, atas permintaan pemilik; mati saat reduce motion dan di layar < 768px |
 | APK sedang diunggah/dianalisis | Garis pindai bergerak di layar ponsel 3D dan titik di kartu berkedip; diam saat tidak ada proses |
 | Halaman Pemeriksa APK terbuka | Lima kartu pemeriksaan (izin, sertifikat, URL dan domain, kode tersembunyi, judi online) terus keluar-masuk dari layar ponsel bergantian. Isinya apa yang diperiksa, bukan hasil: halaman unggah belum punya hasil scan |
 | Baris log baru di `/log` | Meluncur masuk dari atas dengan sorotan emas yang memudar 2,2 detik; baris lain bergeser (layout) |
@@ -81,7 +82,7 @@ Pengecualian yang disetujui pemilik (3 Nov 2026): **latar sinyal** (`components/
 
 ## Motif 3D: perangkat fisik
 
-Dua objek 3D tanpa WebGL (`components/objects-3d.tsx`): wajah SVG ditumpuk beberapa lapis sepanjang sumbu Z lalu dimiringkan dengan perspektif CSS. Hanya objek yang punya makna: **kentongan** (logo, peringatan dini) di landing dan **ponsel berisi paket APK** di Pemeriksa APK. Dashboard tidak memakai objek 3D agar tetap tenang untuk analis.
+Objek tanpa WebGL di `components/objects-3d.tsx`, hanya yang punya makna. **Ponsel berisi paket APK** di Pemeriksa APK: wajah SVG ditumpuk beberapa lapis sepanjang sumbu Z lalu dimiringkan dengan perspektif CSS. **Kentongan** (logo, peringatan dini) di landing digambar sebagai piksel 16×16 (`crispEdges`) dengan bayangan offset 1 piksel, senada dengan tema piksel landing. Ini satu-satunya unsur berwarna non-severity di landing: logo tetap memakai warna identitas (hijau perisai, emas). Dashboard tidak memakai objek 3D agar tetap tenang untuk analis.
 
 Unit nyata diberi kelas `.slab` (bayangan keras bertumpuk tanpa blur, `app/globals.css`) agar tampak seperti perangkat fisik: kartu modul di landing (ditambah `.slab-press`, tertekan saat disorot), tahap alur korelasi, dan kotak unggah APK. Tidak dipakai untuk semua kartu.
 

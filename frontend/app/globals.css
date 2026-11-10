@@ -71,7 +71,29 @@ body {
     visibility: hidden;
   }
 }
+/* kentongan berayun sekali dari gantungannya, 3 bingkai per ayunan, lalu diam */
+@keyframes px-swing {
+  20% {
+    transform: rotate(16deg);
+  }
+  40% {
+    transform: rotate(-11deg);
+  }
+  60% {
+    transform: rotate(6deg);
+  }
+  80% {
+    transform: rotate(-3deg);
+  }
+}
+.px-swing {
+  transform-box: view-box;
+  transform-origin: 8px 0;
+}
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .px-swing {
+    animation: px-swing 2.4s steps(3, end) 0.45s 1;
+  }
   .px-cursor {
     animation: px-blink 1s steps(2, start) infinite;
   }

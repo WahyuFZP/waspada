@@ -1,9 +1,9 @@
 "use client";
 
 import { animate, createScope, scrambleText, stagger } from "animejs";
-import { motion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Kentongan3D } from "@/components/objects-3d";
 import { SignalLines } from "@/components/signal-lines";
 import { NetworkScan } from "@/components/network-scan";
@@ -45,8 +45,27 @@ const TALLY = [
   { n: 1, label: "Perlu dicek", tone: "text-sev-critical", critical: true },
 ];
 
+// Kentongan berayun ke kanan-kiri saat digulir, seperti gantungan kunci: kecepatan gulir mendorongnya, pegas lembek
+// membuatnya bergoyang beberapa kali dari gantungannya lalu diam. Tidak naik-turun. Diam di layar kecil & reduce motion.
+function useKentonganScroll() {
+  const reduce = useReducedMotion();
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = matchMedia("(min-width: 768px)");
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  const { scrollY } = useScroll();
+  const push = useTransform(useVelocity(scrollY), [-700, 0, 700], [-24, 0, 24], { clamp: true });
+  const rotate = useSpring(push, { stiffness: 70, damping: 4, mass: 0.9 });
+  return desktop && !reduce ? { rotate, originX: 0.5, originY: 0 } : undefined;
+}
+
 export default function Boot() {
   const root = useRef<HTMLElement>(null);
+  const kentongan = useKentonganScroll();
 
   useEffect(() => {
     let scope: ReturnType<typeof createScope> | undefined;
@@ -101,7 +120,9 @@ export default function Boot() {
               </span>
               Pusat Siber · sistem aktif
             </p>
-            <Kentongan3D className="mt-4 h-28 w-28 md:h-32 md:w-32" />
+            <motion.div className="mt-4 h-28 w-28 md:h-32 md:w-32" style={kentongan}>
+              <Kentongan3D className="h-full w-full" />
+            </motion.div>
             <h1 className="font-pixel mt-3 text-4xl font-bold leading-none md:text-6xl">
               <span className="title">WASPADA</span>
               <span aria-hidden className="px-cursor ml-1 inline-block h-[0.8em] w-[0.45em] translate-y-[0.05em] bg-ink" />

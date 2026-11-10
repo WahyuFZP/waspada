@@ -16,40 +16,38 @@ function Stack({ depth, layer }: { depth: number; layer: (front: boolean) => Rea
 const reduceMotion = { reduce: "(prefers-reduced-motion: reduce)" };
 const preserve = { transformStyle: "preserve-3d" } as const;
 
-// Logo WASPADA sebagai kentongan pos ronda yang digantung. Saat halaman dibuka ia berayun sekali lalu diam,
-// seperti baru dipukul: peringatan dibunyikan.
+// Kentongan berpiksel di kisi 16×16: tiap rect = deretan piksel. Bayangan = bentuk yang sama digeser 1 piksel,
+// senada dengan bayangan offset keras di kartu landing.
+const KENTONGAN = [
+  [7, 0, 2, 2], // gantungan
+  [5, 2, 6, 1],
+  [4, 3, 8, 1],
+  [3, 4, 10, 10], // badan
+  [4, 14, 8, 1],
+  [5, 15, 6, 1],
+];
+const HANDLES = [
+  [1, 6, 2, 7],
+  [13, 6, 2, 7],
+];
+const px = (parts: number[][], fill: string, dx = 0) =>
+  parts.map(([x, y, w, h]) => <rect key={`${fill}-${x}-${y}`} x={x + dx} y={y + dx} width={w} height={h} fill={fill} />);
+
+// Logo WASPADA sebagai kentongan pos ronda yang digantung, gaya piksel 8-bit. Saat halaman dibuka ia berayun sekali
+// lalu diam, seperti baru dipukul: peringatan dibunyikan. Ayunan per bingkai (steps) ada di globals.css (.px-swing).
 export function Kentongan3D({ className = "" }: { className?: string }) {
-  const swing = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const scope = createScope({ root: swing, mediaQueries: reduceMotion }).add((self) => {
-      if (self?.matches.reduce) return;
-      animate(swing.current!, { rotateZ: [0, 24, -16, 10, -5, 2, 0], duration: 3200, delay: 450, ease: "outSine" });
-    });
-    return () => scope.revert();
-  }, []);
-
   return (
-    <div role="img" aria-label="Logo WASPADA: kentongan" className={className} style={{ perspective: "600px" }}>
-      <div className="relative h-full w-full" style={{ ...preserve, transform: "rotateX(10deg) rotateY(-38deg)" }}>
-        <div ref={swing} className="absolute inset-0" style={{ ...preserve, transformOrigin: "50% 6%" }}>
-          <Stack
-            depth={16}
-            layer={(front) => (
-              <svg viewBox="0 0 64 64" className="h-full w-full">
-                <path
-                  className={front ? "fill-siber-bright" : "fill-siber"}
-                  fillRule="evenodd"
-                  d="M32 3a3 3 0 0 1 3 3v3h3a11 11 0 0 1 11 11v30a11 11 0 0 1-11 11H26a11 11 0 0 1-11-11V20A11 11 0 0 1 26 9h3V6a3 3 0 0 1 3-3zM28 20v30a4 4 0 0 0 8 0V20a4 4 0 0 0-8 0z"
-                />
-                <rect className={front ? "fill-gold" : "fill-gold-deep"} x="3" y="24" width="6" height="22" rx="3" />
-                <rect className={front ? "fill-gold" : "fill-gold-deep"} x="55" y="24" width="6" height="22" rx="3" />
-              </svg>
-            )}
-          />
-        </div>
-      </div>
-    </div>
+    <svg role="img" aria-label="Logo WASPADA: kentongan" viewBox="0 0 17 17" shapeRendering="crispEdges" className={className}>
+      <g className="px-swing">
+        {/* warna identitas WASPADA: badan hijau perisai, pegangan emas; sisi gelap = bayangan 1 piksel */}
+        {px(KENTONGAN, "var(--color-siber)", 1)}
+        {px(HANDLES, "var(--color-gold-deep)", 1)}
+        {px(KENTONGAN, "var(--color-siber-bright)")}
+        <rect x="4" y="4" width="1" height="9" fill="var(--color-ink)" fillOpacity="0.55" /> {/* kilap tepi kiri */}
+        {px(HANDLES, "var(--color-gold)")}
+        <rect x="7" y="5" width="2" height="8" fill="var(--color-bg)" /> {/* celah kentongan */}
+      </g>
+    </svg>
   );
 }
 
