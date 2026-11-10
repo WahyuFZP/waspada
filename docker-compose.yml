@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped  # semua service demo menyala lagi sendiri setelah Docker atau laptop restart
     environment:
       POSTGRES_USER: waspada
       POSTGRES_PASSWORD: waspada  # kredensial demo lokal saja, jangan dipakai di server publik
@@ -17,6 +18,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada
       TEST_DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada_test
@@ -36,11 +38,18 @@ services:
     command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload --timeout-graceful-shutdown 2
     depends_on:
       db: {condition: service_healthy}
+    # siap = API menjawab (memori korelasi sudah dipulihkan); rss-poller menunggu ini agar polling pertama tidak gagal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/alerts?limit=1', timeout=3)"]
+      interval: 5s
+      start_period: 10s
+      retries: 30
 
   # Pemeriksa APK: service terpisah dengan SQLite sendiri. APK dari luar dibaca di dalam container ini,
   # jadi bila ada celah di parser, dampaknya terkurung di sini.
   apk-scanner:
     build: ./apk-scanner/backend
+    restart: unless-stopped
     environment:
       DATA_DIR: /data
       # opsional: cek hash APK ke MalwareBazaar (kunci gratis di auth.abuse.ch); kosong = langkah ini dilewati
@@ -64,6 +73,7 @@ services:
   # Setiap percobaan menulis log asli ke volume demolog, yang dikirim log-shipper ke SIEM.
   ssh-target:
     build: ./demo/ssh-target
+    restart: unless-stopped
     hostname: srv-latihan
     environment:
       SSH_DEMO_PASSWORD: ${SSH_DEMO_PASSWORD:-latihan123}
@@ -74,6 +84,7 @@ services:
   # Bila ssh-target dibuat ulang, jalankan ulang juga: docker compose restart suricata
   suricata:
     image: jasonish/suricata:8.0.7
+    restart: unless-stopped
     network_mode: service:ssh-target
     command: -c /waspada/suricata.yaml --af-packet=eth0 -k none
     cap_add: [NET_ADMIN, NET_RAW, SYS_NICE]
@@ -85,6 +96,7 @@ services:
   # Pengirim log: skrip yang sama dengan yang dipasang di server satuan (shipper/waspada_shipper.py)
   log-shipper:
     image: python:3.12-alpine
+    restart: unless-stopped
     command: python /app/waspada_shipper.py --api http://backend:8000 --auth /logs/auth.log --suricata /ids/eve.json
     environment:
       INGEST_TOKEN: ${INGEST_TOKEN:-}
@@ -97,6 +109,21 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     depends_on: [backend, ssh-target, suricata]
+
+  # Pembaca berita live: polling feed RSS di backend/feeds.yaml setiap 5 menit lalu mengirimnya ke /ingest.
+  # Hentikan sementara (mis. menjaga kuota WA): docker compose stop rss-poller
+  rss-poller:
+    build: ./backend
+    restart: unless-stopped
+    command: python rss.py --api http://backend:8000
+    environment:
+      INGEST_TOKEN: ${INGEST_TOKEN:-}
+    volumes: ["./backend:/app:ro"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      backend: {condition: service_healthy}
 
 volumes:
   pgdata:
