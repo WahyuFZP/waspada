@@ -3,7 +3,9 @@ PATCH /alerts/{id} (tindak lanjut analis), GET /stream (SSE)."""
 import asyncio
 import hmac
 import json
+import logging
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import Body, FastAPI, Header, HTTPException
@@ -16,13 +18,28 @@ from normalize import load_topics, normalize
 from parsers import load_assets
 from store import Store
 
-app = FastAPI(title="WASPADA OSINT-SIEM")
+def restore(engine, store):
+    """Bangun ulang memori window engine dari event tersimpan, agar rangkaian yang belum selesai tidak hilang saat restart.
+    Event diproses ulang dalam urutan masuk; alert yang terbentuk dibuang karena sudah tersimpan (tanpa duplikat, tanpa notifikasi)."""
+    horizon = max(r["window"] for r in engine.rules)
+    events = store.events_since(datetime.now(timezone.utc) - horizon)
+    for event in events:
+        engine.process(event)
+    return len(events)
+
+
+@asynccontextmanager
+async def lifespan(_):
+    logging.getLogger("uvicorn.error").info("memori korelasi dipulihkan dari %d event", restore(engine, store))
+    yield
+
+
+app = FastAPI(title="WASPADA OSINT-SIEM", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(","),
                    allow_methods=["*"], allow_headers=["*"])
 
 topics = load_topics()
 assets = load_assets()
-# shortcut: state window hanya di memori, hilang saat restart; muat ulang dari tabel events jika perlu tahan restart
 engine = Engine(load_rules())
 store = Store(os.environ.get("DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada"))
 subscribers: set[asyncio.Queue] = set()
