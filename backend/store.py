@@ -43,6 +43,10 @@ class Store:
         return [r[0] for r in self.db.execute(
             "SELECT body FROM events WHERE body->>'source' = ANY(%s) ORDER BY ts DESC, id DESC LIMIT %s", (sources, limit))]
 
+    def events_since(self, since):
+        """Event dengan waktu kejadian >= since, dalam urutan masuk (bukan urutan waktu) agar engine memprosesnya sama persis."""
+        return [r[0] for r in self.db.execute("SELECT body FROM events WHERE ts >= %s ORDER BY id", (since,))]
+
     def alerts(self, limit=50):
         return self._latest("alerts", limit)
 

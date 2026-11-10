@@ -221,3 +221,23 @@ def test_alert_handling_appends_history_and_requires_note_to_close():
     assert [(h["status"], h["note"]) for h in alert["handling"]] == [
         ("ditangani", "IP diblokir di firewall"), ("selesai", "Akun latihan direset")]
     assert next(a for a in client.get("/alerts").json() if a["id"] == alert_id)["status"] == "selesai"
+
+
+def test_restart_restores_half_finished_chain_without_new_alerts():
+    from datetime import datetime, timezone
+    from app import restore
+    from engine import Engine, load_rules
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    scan = {"kind": "suricata", "event_type": "alert", "timestamp": now, "src_ip": "10.9.9.9", "dest_ip": "172.18.9.9",
+            "host": "srv-uji-restart", "alert": {"signature": "WASPADA SCAN SYN ke port selain SSH"}}
+    for port in (21, 23, 80, 443, 3389):  # rangkaian dimulai sebelum "restart": 5 pemindaian, belum ada login
+        assert client.post("/ingest", json={**scan, "dest_port": port}).status_code == 200
+    line = "Nov 10 02:00:00 srv-uji-restart sshd[1]: Accepted password for latihan from 10.9.9.9 port 5 ssh2"
+    [login] = normalize({"kind": "auth", "line": line, "timestamp": now}, load_topics())
+
+    alerts_before = len(client.get("/alerts?limit=500").json())
+    fresh = Engine(load_rules())  # proses backend baru setelah restart
+    assert restore(fresh, store) >= 5
+    assert len(client.get("/alerts?limit=500").json()) == alerts_before  # pemulihan tidak membuat alert ganda
+    assert [a["rule"] for a in fresh.process(login)] == ["Pemindaian diikuti login berhasil"]
+    assert Engine(load_rules()).process(login) == []  # tanpa pemulihan, rangkaian itu hilang

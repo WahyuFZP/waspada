@@ -78,7 +78,7 @@ flowchart LR
    Window dihitung dari timestamp event, bukan jam dinding, sehingga replay demo selalu menghasilkan alert yang sama. Setiap alert membawa teknik MITRE ATT&CK.
 6. **Keluaran**: alert disimpan ke PostgreSQL, dikirim ke dashboard lewat SSE tanpa refresh, ke Discord bila `DISCORD_WEBHOOK_URL` diatur, dan (khusus high/critical) ke WhatsApp lewat OpenWA bila `OPENWA_*` dan `WA_ALERT_CHAT` diatur. Pesan WA hanya ringkasan dan tautan dashboard.
 
-**Batasan yang disengaja:** state window disimpan di memori, jadi hilang saat backend restart (ditandai di kode). Cukup untuk skala demo; untuk produksi state dimuat ulang dari tabel `events`.
+**Tahan restart:** state window ada di memori, tetapi saat backend menyala `restore()` (`app.py`) memproses ulang event dari tabel `events` selama window rule terpanjang (30 hari), dalam urutan masuk. Alert yang terbentuk selama pemulihan dibuang karena sudah tersimpan, jadi tidak ada alert ganda maupun notifikasi ulang. Rangkaian yang belum selesai (mis. KEV yang menunggu upaya eksploitasi) tetap berlanjut setelah restart. Batasannya: bila `rules.yaml` diubah, rule baru tidak membuat alert untuk rangkaian lama yang sudah lewat.
 
 ### Pengirim log (`shipper/waspada_shipper.py`)
 
