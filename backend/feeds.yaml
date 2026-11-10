@@ -26,3 +26,24 @@
   - {name: abc_au, region: foreign, url: "https://www.abc.net.au/news/feed/51120/rss.xml"}
   - {name: dw, region: foreign, url: "https://rss.dw.com/rdf/rss-en-asia"}
   - {name: defensenews, region: foreign, url: "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml"}
+
+  # Teknologi & siber. Dicek 10 Nov 2026 (status 200, berisi artikel bertanggal). Tempo Tekno (403) dan BSSN
+  # (tidak ada RSS, 404) tidak dimasukkan. Feed teknologi umum ikut berita gawai; hanya artikel yang cocok dengan
+  # kata kunci topik + kategori di topics.yaml yang menjadi event, jadi berita gawai tersaring sendiri.
+
+  # Dalam negeri
+  - {name: detik_inet, region: domestic, url: "https://inet.detik.com/rss"}
+  - {name: cnnindonesia_tekno, region: domestic, url: "https://www.cnnindonesia.com/teknologi/rss"}
+  - {name: antara_tekno, region: domestic, url: "https://www.antaranews.com/rss/tekno.xml"}
+  - {name: cnbcindonesia_tech, region: domestic, url: "https://www.cnbcindonesia.com/tech/rss"}
+  - {name: liputan6_tekno, region: domestic, url: "https://feed.liputan6.com/rss/tekno"}
+
+  # Luar negeri
+  - {name: bleepingcomputer, region: foreign, url: "https://www.bleepingcomputer.com/feed/"}
+  - {name: thehackernews, region: foreign, url: "https://feeds.feedburner.com/TheHackersNews"}
+  - {name: securityweek, region: foreign, url: "https://www.securityweek.com/feed/"}
+  - {name: therecord, region: foreign, url: "https://therecord.media/feed"}
+  - {name: darkreading, region: foreign, url: "https://www.darkreading.com/rss.xml"}
+  - {name: krebsonsecurity, region: foreign, url: "https://krebsonsecurity.com/feed/"}
+  - {name: welivesecurity, region: foreign, url: "https://www.welivesecurity.com/en/rss/feed/"}
+  - {name: cisa_advisories, region: foreign, url: "https://www.cisa.gov/cybersecurity-advisories/all.xml"}

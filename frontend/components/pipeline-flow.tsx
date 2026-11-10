@@ -7,7 +7,7 @@ import type { Alert, Event } from "@/lib/types";
 // Alur korelasi WASPADA. Setiap event nyata dari stream memunculkan paket Ingest -> Korelasi,
 // setiap alert nyata memunculkan paket Korelasi -> Peringatan. Tanpa data baru, alur diam.
 const STAGES = [
-  { name: "Ingest", desc: "21 media RSS masuk lewat satu pintu" },
+  { name: "Ingest", desc: "34 media RSS (berita dan siber) masuk lewat satu pintu" },
   { name: "Normalisasi", desc: "Artikel jadi event: topik & kategori" },
   { name: "Korelasi", desc: "Rangkaian dicocokkan dengan aturan" },
   { name: "Peringatan", desc: "Dashboard & Discord, tanpa refresh" },

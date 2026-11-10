@@ -91,6 +91,14 @@ def test_sequence_matches_events_in_the_same_second_regardless_of_arrival_order(
     assert [a for port in (21, 23, 80, 443, 3389) for a in engine.process({**base, "event_type": "ids.scan", "dest_port": port})] == []
 
 
+def test_cyber_news_maps_to_siber_incident_but_never_military():
+    art = {"timestamp": "2026-11-10T02:00:00Z", "source": "x", "region": "foreign"}
+    types = lambda title: [(e["topic"], e["event_type"]) for e in normalize({**art, "title": title}, load_topics())]  # noqa: E731
+    assert types("CISA Adds Four Known Exploited Vulnerabilities to Catalog") == [("siber", "news.incident")]
+    assert ("siber", "news.military") not in types("Bitter Hackers Deploy New PapRAT Backdoor")  # "deploy" bukan militer
+    assert types("Xiaomi 18 Pro dan Pro Max Rilis Global") == []  # berita gawai di feed teknologi tersaring
+
+
 def test_auth_parser_reads_sshd_and_ignores_other_lines():
     ok = normalize({"kind": "auth", "line": "Oct 22 09:15:30 srv-web-01 sshd[1]: Accepted publickey for budi from 10.0.0.7 port 5 ssh2",
                     "timestamp": "2026-10-22T09:15:30Z"}, load_topics())

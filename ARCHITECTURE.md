@@ -7,7 +7,7 @@
 ```mermaid
 flowchart LR
   subgraph Sumber
-    RSS[21 feed RSS media]
+    RSS[34 feed RSS: berita + teknologi/siber]
     KEV[Katalog CISA KEV]
     LOG[Log SSH dan Suricata satuan<br/>dikirim waspada_shipper.py]
     USER[Personel mengunggah APK]
@@ -66,7 +66,7 @@ flowchart LR
   A --> W[Discord / WhatsApp]
 ```
 
-1. **Ingest** (`app.py`): record masuk lewat `POST /ingest`. Sumbernya `rss.py` (polling 21 feed setiap 5 menit), `kev.py` (katalog CISA KEV × `assets.yaml`), `replay.py` (skenario demo), atau log yang dikirim langsung.
+1. **Ingest** (`app.py`): record masuk lewat `POST /ingest`. Sumbernya `rss.py` (polling 34 feed setiap 5 menit: 21 media berita dan 13 media teknologi/siber dalam dan luar negeri), `kev.py` (katalog CISA KEV × `assets.yaml`), `replay.py` (skenario demo), atau log yang dikirim langsung.
 2. **Normalisasi** (`normalize.py`, `parsers.py`): setiap sumber dipetakan ke satu skema event. Berita dicocokkan ke topik dan kategori dari `topics.yaml`; IP tujuan Suricata dipetakan ke nama aset lewat `assets.yaml`.
 3. **GeoIP** (`geoip.py`): event dengan `src_ip` diberi negara dan pemilik jaringan dari DB-IP Lite. Database diunduh saat build image (`geoip_fetch.py`) dan dibaca offline. IP internal dan rentang khusus diberi label, tidak ditebak.
 4. **Deduplikasi**: event dengan `url` yang sudah tersimpan dibuang.
