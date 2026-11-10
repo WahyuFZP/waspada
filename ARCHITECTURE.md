@@ -24,7 +24,7 @@ flowchart LR
   end
 
   FE[Dashboard Next.js<br/>:3000]
-  DC[Discord webhook<br/>opsional]
+  DC[Discord webhook /<br/>WhatsApp via OpenWA<br/>opsional]
   MB[MalwareBazaar<br/>opsional, hanya hash]
 
   RSS --> BE
@@ -63,7 +63,7 @@ flowchart LR
   S --> E[Mesin korelasi<br/>engine.py + rules.yaml]
   E -- rangkaian cocok --> A[(alerts)]
   A --> SSE[SSE ke dashboard]
-  A --> W[Discord]
+  A --> W[Discord / WhatsApp]
 ```
 
 1. **Ingest** (`app.py`): record masuk lewat `POST /ingest`. Sumbernya `rss.py` (polling 21 feed setiap 5 menit), `kev.py` (katalog CISA KEV × `assets.yaml`), `replay.py` (skenario demo), atau log yang dikirim langsung.
@@ -76,7 +76,7 @@ flowchart LR
    - *cross-source*: langkah dari sumber berbeda (mis. aset rentan KEV → upaya eksploitasi → login berhasil).
 
    Window dihitung dari timestamp event, bukan jam dinding, sehingga replay demo selalu menghasilkan alert yang sama. Setiap alert membawa teknik MITRE ATT&CK.
-6. **Keluaran**: alert disimpan ke PostgreSQL, dikirim ke dashboard lewat SSE tanpa refresh, dan ke Discord bila `DISCORD_WEBHOOK_URL` diatur.
+6. **Keluaran**: alert disimpan ke PostgreSQL, dikirim ke dashboard lewat SSE tanpa refresh, ke Discord bila `DISCORD_WEBHOOK_URL` diatur, dan (khusus high/critical) ke WhatsApp lewat OpenWA bila `OPENWA_*` dan `WA_ALERT_CHAT` diatur. Pesan WA hanya ringkasan dan tautan dashboard.
 
 **Batasan yang disengaja:** state window disimpan di memori, jadi hilang saat backend restart (ditandai di kode). Cukup untuk skala demo; untuk produksi state dimuat ulang dari tabel `events`.
 
@@ -138,7 +138,7 @@ Dashboard hanya menampilkan data; semua logika deteksi ada di backend. Arah desa
 | Container log-shipper | Filesystem read-only, log di-mount read-only, semua capability dicabut, `no-new-privileges` |
 | Batas kepercayaan | Record `/ingest` dan file APK divalidasi sebelum diproses; URL berita hanya `http`/`https`; nama file dari pengguna dibuang |
 | Container scanner | User non-root, kode di-mount read-only, filesystem read-only, semua capability dicabut, `no-new-privileges` |
-| Data keluar | Hanya hash APK ke MalwareBazaar (bila kunci diatur) dan alert ke Discord (bila webhook diatur). IP penyerang tidak dikirim ke layanan GeoIP mana pun |
+| Data keluar | Hanya hash APK ke MalwareBazaar (bila kunci diatur), alert ke Discord (bila webhook diatur), dan ringkasan alert high/critical ke WhatsApp lewat OpenWA (bila diatur; berisi rule, host, dan IP, melewati server Meta, tanpa log mentah). IP penyerang tidak dikirim ke layanan GeoIP mana pun |
 | Etika | Murni defensif. Token atau URL pelaku yang ditemukan hanya dicatat sebagai bukti untuk dilaporkan, tidak dipakai untuk mengakses sistem pelaku |
 | Data demo | Sintetis dan berlabel "Simulasi"; IP penyerang memakai rentang dokumentasi 203.0.113.0/24 |
 

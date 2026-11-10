@@ -1,6 +1,7 @@
 # Rule = urutan langkah dalam satu window, per group_by.
 # Tiap langkah: match (field: nilai atau list nilai), count (default 1), distinct (field yang harus beda-beda).
-# Langkah ke-n hanya menghitung event yang datang setelah langkah ke-(n-1) terpenuhi.
+# Langkah ke-n hanya menghitung event yang timestamp-nya sama atau setelah langkah ke-(n-1) terpenuhi
+# (sama: log beresolusi detik dari sumber berbeda tidak punya urutan pasti dalam satu detik).
 #   threshold    = satu langkah dengan count
 #   sequence     = beberapa langkah berurutan
 #   cross-source = langkah yang match ke region/source berbeda
