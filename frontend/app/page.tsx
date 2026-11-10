@@ -37,11 +37,12 @@ const MODULES = [
   },
 ];
 
-// ringkasan gaya agen Wazuh (Total/Aktif/Terputus); angkanya menggambarkan ilustrasi di sebelahnya, bukan data langsung
+// ringkasan gaya agen Wazuh (Total/Aktif/Terputus); angkanya menggambarkan ilustrasi di sebelahnya, bukan data langsung.
+// Gaya piksel: warna hanya untuk severity, sisanya abu-abu.
 const TALLY = [
   { n: 6, label: "Perangkat dipantau", tone: "text-ink" },
-  { n: 5, label: "Aman", tone: "text-siber-bright" },
-  { n: 1, label: "Perlu dicek", tone: "text-sev-critical" },
+  { n: 5, label: "Aman", tone: "text-ink-muted" },
+  { n: 1, label: "Perlu dicek", tone: "text-sev-critical", critical: true },
 ];
 
 export default function Boot() {
@@ -51,8 +52,11 @@ export default function Boot() {
     let scope: ReturnType<typeof createScope> | undefined;
     // dibuat di frame pertama: hitung naik dimulai dari 0, jadi bila browser belum menggambar, angka asli tetap tampil
     const id = requestAnimationFrame(() => {
-      scope = createScope({ root, mediaQueries: { reduce: "(prefers-reduced-motion: reduce)" } }).add((self) => {
-        if (self?.matches.reduce) return;
+      scope = createScope({
+        root,
+        mediaQueries: { reduce: "(prefers-reduced-motion: reduce)", small: "(max-width: 767px)" },
+      }).add((self) => {
+        if (self?.matches.reduce || self?.matches.small) return; // layar kecil & reduce motion: diam dan terbaca
         animate(".title", { innerHTML: scrambleText({ chars: "uppercase" }), duration: 1100, delay: 200 });
         animate(".tally-n", {
           innerHTML: [0, (el: unknown) => Number((el as HTMLElement).dataset.n)],
@@ -72,56 +76,63 @@ export default function Boot() {
 
   return (
     <main ref={root} className="relative min-h-dvh overflow-hidden">
-      {/* latar tenang: kisi titik halus + dua cahaya lembut, menggantikan CRT yang terlalu ramai */}
-      <div aria-hidden className="fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(var(--color-line)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
-        <div className="absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-siber/20 blur-3xl" />
-        <div className="absolute -bottom-48 -right-40 h-[520px] w-[520px] rounded-full bg-gold/10 blur-3xl" />
+      {/* latar: kisi piksel kasar, garis 2px tiap 32px, tanpa blur atau gradasi */}
+      <svg aria-hidden className="fixed inset-0 -z-10 h-full w-full" shapeRendering="crispEdges">
+        <defs>
+          <pattern id="px-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+            <rect width="32" height="2" fill="var(--color-surface-2)" />
+            <rect width="2" height="32" fill="var(--color-surface-2)" />
+            <rect width="4" height="4" fill="var(--color-line)" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#px-grid)" />
+      </svg>
+      <div className="hidden md:block">
+        <SignalLines />
       </div>
-      <SignalLines />
 
       <div className="relative mx-auto grid min-h-dvh max-w-6xl items-center gap-10 px-4 py-16 md:px-6 lg:grid-cols-[1fr_minmax(0,480px)]">
-        <div className="flex flex-col gap-8">
+        <div className="flex min-w-0 flex-col gap-8">
           <motion.div {...rise(0)}>
-            <p className="font-data inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs text-ink-muted">
+            <p className="font-pixel inline-flex items-center gap-2 border-2 border-line bg-surface px-3 py-1 text-[11px] uppercase text-ink-muted">
               <span className="relative flex h-2 w-2">
-                <span aria-hidden className="live-dot absolute inset-0 rounded-full bg-siber-bright" />
-                <span className="relative h-2 w-2 rounded-full bg-siber-bright" />
+                <span aria-hidden className="live-dot absolute inset-0 bg-ink" />
+                <span className="relative h-2 w-2 bg-ink" />
               </span>
               Pusat Siber · sistem aktif
             </p>
             <Kentongan3D className="mt-4 h-28 w-28 md:h-32 md:w-32" />
-            <h1 className="title font-display mt-3 text-6xl font-bold leading-none md:text-8xl">WASPADA</h1>
-            <p className="font-data mt-2 text-xs tracking-wide text-siber-bright">
+            <h1 className="font-pixel mt-3 text-4xl font-bold leading-none md:text-6xl">
+              <span className="title">WASPADA</span>
+              <span aria-hidden className="px-cursor ml-1 inline-block h-[0.8em] w-[0.45em] translate-y-[0.05em] bg-ink" />
+            </h1>
+            <p className="font-data mt-3 text-xs tracking-wide text-ink-muted">
               Wide-Area Signal Processing for Alerting and Domain Awareness
             </p>
-            <p className="mt-4 max-w-xl text-ink-muted md:text-lg">
+            <p className="font-data mt-4 max-w-xl text-sm leading-relaxed text-ink-muted md:text-base">
               Teman jaga keamanan digital satuan. Kami pantau kabar ancaman dan bantu memeriksa aplikasi mencurigakan,
-              supaya Anda bisa bertindak <span className="text-gold">sebelum</span> terlambat.
+              supaya Anda bisa bertindak <span className="font-pixel text-ink">sebelum</span> terlambat.
             </p>
           </motion.div>
 
-          <motion.ul className="grid gap-4 sm:grid-cols-2" {...rise(0.2)}>
+          <motion.ul className="grid gap-5 sm:grid-cols-2" {...rise(0.2)}>
             {MODULES.map((m) => (
               <li key={m.href}>
-                <Link
-                  href={m.href}
-                  className="slab slab-press group flex h-full flex-col gap-3 rounded-2xl border border-line bg-surface p-5 hover:border-gold"
-                >
+                <Link href={m.href} className="px-block px-press group flex h-full flex-col gap-3 bg-surface p-5">
                   <span className="flex flex-col items-start gap-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-surface-2 text-gold">
-                      <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <span className="grid h-10 w-10 place-items-center border-2 border-line bg-surface-2 text-ink">
+                      <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
                         <path d={m.icon} />
                       </svg>
                     </span>
                     <span>
-                      <span className="font-display block text-2xl font-semibold leading-tight">{m.title}</span>
+                      <span className="font-pixel block text-lg leading-tight">{m.title}</span>
                       <span className="font-data block text-[11px] text-ink-muted">{m.tag}</span>
                     </span>
                   </span>
-                  <span className="text-sm text-ink-muted">{m.desc}</span>
-                  <span className="font-data mt-auto pt-1 text-xs text-gold">
-                    Masuk <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+                  <span className="font-data text-sm text-ink-muted">{m.desc}</span>
+                  <span className="font-pixel mt-auto self-start border-2 border-ink bg-ink px-3 py-1 text-[11px] uppercase text-bg">
+                    Masuk →
                   </span>
                 </Link>
               </li>
@@ -133,15 +144,18 @@ export default function Boot() {
           </motion.p>
         </div>
 
-        <motion.figure className="rounded-2xl border border-line bg-surface/60 p-4 backdrop-blur-sm" {...rise(0.15)}>
+        <motion.figure className="px-block min-w-0 bg-surface p-4" {...rise(0.15)}>
           <NetworkScan />
-          <figcaption className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
+          <figcaption className="mt-3 grid grid-cols-3 gap-2 border-t-2 border-line pt-3 text-center">
             {TALLY.map((t) => (
               <span key={t.label}>
-                <span data-n={t.n} className={`tally-n font-display block text-3xl font-bold ${t.tone}`}>
+                <span data-n={t.n} className={`tally-n font-pixel block text-2xl font-bold ${t.tone}`}>
                   {t.n}
                 </span>
-                <span className="font-data text-[11px] text-ink-muted">{t.label}</span>
+                <span className="font-data inline-flex items-center gap-1 text-[11px] text-ink-muted">
+                  {"critical" in t && <span aria-hidden className="px-pulse h-2 w-2 bg-sev-critical" />}
+                  {t.label}
+                </span>
               </span>
             ))}
           </figcaption>
