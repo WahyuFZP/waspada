@@ -32,14 +32,14 @@ export function FinalAnalysisCard({ a }: { a: FinalAnalysis }) {
       className={`rounded-2xl border bg-surface p-5 md:p-6 ${STATUS_STYLE[a.status]}`}
     >
       <p className="font-data text-xs uppercase tracking-[0.12em]">Analisa akhir otomatis</p>
-      <h2 id="akhir-title" className="font-display mt-1 text-4xl font-bold">
+      <h2 id="akhir-title" className="font-body mt-1 text-3xl font-bold md:text-4xl">
         {a.status}
       </h2>
 
       <div className="mt-4 grid gap-6 text-ink md:grid-cols-2">
         <div>
           <h3 className="font-data text-xs text-ink-muted">Mengapa</h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-base">
             {a.alasan.map((x) => (
               <li key={x}>{x}</li>
             ))}
@@ -47,7 +47,7 @@ export function FinalAnalysisCard({ a }: { a: FinalAnalysis }) {
         </div>
         <div>
           <h3 className="font-data text-xs text-ink-muted">Yang perlu Anda lakukan</h3>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-base">
             {a.saran.map((x) => (
               <li key={x}>{x}</li>
             ))}
@@ -59,7 +59,7 @@ export function FinalAnalysisCard({ a }: { a: FinalAnalysis }) {
         <div className="min-w-0">
           <h3 className="font-data text-xs text-ink-muted">Sertifikat penandatangan</h3>
           {c.skema ? (
-            <div className="mt-2 space-y-1 text-sm">
+            <div className="mt-2 space-y-1 text-base">
               <p>{c.subjek ?? "Tanpa sertifikat"}</p>
               <p className="font-data text-xs text-ink-muted">
                 Skema {c.skema.join(", ") || "-"} · berlaku s.d. {c.berlaku_hingga ?? "-"}
@@ -68,7 +68,7 @@ export function FinalAnalysisCard({ a }: { a: FinalAnalysis }) {
               {c.sha256 && <p className="font-data break-all text-[11px] text-ink-muted">SHA-256 {c.sha256}</p>}
             </div>
           ) : (
-            <p className="mt-2 text-sm text-ink-muted">Tidak dapat dibaca.</p>
+            <p className="mt-2 text-base text-ink-muted">Tidak dapat dibaca.</p>
           )}
         </div>
 
@@ -80,7 +80,7 @@ export function FinalAnalysisCard({ a }: { a: FinalAnalysis }) {
         <div className="min-w-0">
           <h3 className="font-data text-xs text-ink-muted">Domain tujuan ({a.domain.length})</h3>
           <ul className="mt-2 max-h-40 space-y-0.5 overflow-y-auto pr-1">
-            {a.domain.length === 0 && <li className="text-sm text-ink-muted">Tidak ada.</li>}
+            {a.domain.length === 0 && <li className="text-base text-ink-muted">Tidak ada.</li>}
             {a.domain.map((d) => (
               <li key={d.domain} className="font-data flex justify-between gap-2 text-xs">
                 <span className="break-all">

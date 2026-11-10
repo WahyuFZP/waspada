@@ -43,16 +43,20 @@ Severity selalu ditulis dengan label teks, bukan hanya warna:
 
 | Peran | Font | Kelas | Alasan |
 |---|---|---|---|
-| Headline | Barlow Condensed (600/700) | `font-display` | Huruf rapat bergaya papan penanda; tegas dan hemat ruang di layar lebar |
-| Deskripsi | Public Sans (400/500) | `font-body` (default `body`) | Sans netral dari sistem desain pemerintahan; resmi dan mudah dibaca untuk judul berita |
-| Pesan kecil | IBM Plex Mono (400/500) | `font-data` | Label, waktu, sumber, badge; angka sejajar sehingga timestamp terbaca rapi |
-| Aksen piksel | Silkscreen (400/700) | `font-pixel` | Nama merek di navigasi, tombol, nomor tahap, judul landing; menyambung tema piksel 8-bit |
+| Judul pendek (H1/H2 sampai 3 kata) | Silkscreen (400/700) | `font-pixel` | Wajah tema piksel 8-bit: nama merek, judul bagian, tombol, nomor tahap. Huruf lebar mirip kapital, jadi hanya untuk kata pendek |
+| Judul panjang dan teks informasi | Pixelify Sans (400/500/700) | `font-body` (default `body`) | Tetap bergaya piksel, tetapi huruf besar-kecilnya jelas, jadi kalimat panjang dan headline 4+ kata cepat dibaca juri |
+| Label data | IBM Plex Mono (400/500) | `font-data` | Waktu, IP, port, kode MITRE, badge; angka sejajar dan karakter mirip (0/O, 1/l) mudah dibedakan |
+| Judul kartu dan angka statistik | Barlow Condensed (600/700) | `font-display` | Masih dipakai di kartu alert, nama tahap alur, dan angka statistik |
 
-Aturan: tidak ada font kelima. Teks yang bukan headline dan bukan deskripsi memakai `font-data`. `font-pixel` hanya untuk teks pendek: headline panjang dan paragraf tetap memakai font tegak agar juri dan analis tidak perlu menebak isi.
+Aturan:
+- Tidak ada font kelima.
+- H1/H2 pendek memakai `font-pixel`. H1/H2 berupa kalimat atau 4+ kata (hero, "Periksa APK sebelum dipasang", nama rule di detail alert, status analisa akhir) memakai `font-body` tebal.
+- Teks `font-body` minimal 16px (`text-base`): font piksel kehilangan bentuk huruf di bawah ukuran itu. Jarak baris body 1,6.
+- Data yang harus dibedakan per karakter (IP, waktu, hash, nama file) tetap `font-data`.
 
 ### Gaya piksel ringan (di luar landing)
 
-Landing memakai tema piksel penuh. Halaman kerja (pemantauan, log, APK) hanya memakai bingkainya: logo kentongan berpiksel (`LogoMark`, tajam di 34px), nama merek `font-pixel`, tombol blok bersudut tajam dengan bayangan offset yang kempis saat ditekan, nomor tahap persegi, titik status persegi, dan latar kisi piksel di hero. Headline, paragraf, dan panel data tetap seperti biasa supaya mudah dibaca.
+Landing memakai tema piksel penuh. Halaman kerja (pemantauan, log, APK) memakai bingkainya: logo kentongan berpiksel (`LogoMark`, tajam di 34px), nama merek `font-pixel`, judul H1/H2 piksel sesuai aturan di atas, tombol blok bersudut tajam dengan bayangan offset yang kempis saat ditekan, nomor tahap persegi, titik status persegi, dan latar kisi piksel di hero. Panel data tetap tenang supaya mudah dibaca.
 
 ## Nada bahasa
 

@@ -75,7 +75,7 @@ export function PipelineFlow({ events, alerts, loaded }: { events: Event[]; aler
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span className="font-display mt-2 text-lg font-semibold leading-tight md:text-xl">{s.name}</span>
-              <span className="hidden text-sm text-ink-muted md:block">{s.desc}</span>
+              <span className="hidden text-base text-ink-muted md:block">{s.desc}</span>
             </li>
           ))}
         </ol>

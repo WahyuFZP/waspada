@@ -120,7 +120,7 @@ export default function Dashboard() {
 
             <div className="flex flex-col gap-6 p-4 md:p-6">
               {status === "reconnecting" && !loaded && (
-                <p role="alert" className="rounded-lg border border-sev-critical/50 bg-sev-critical/10 p-4 text-sm">
+                <p role="alert" className="rounded-lg border border-sev-critical/50 bg-sev-critical/10 p-4 text-base">
                   Server pemantauan di <span className="font-data">{API}</span> belum dapat dijangkau. Mohon pastikan
                   backend aktif (<span className="font-data">docker compose up</span>). Sistem akan menyambung ulang
                   secara otomatis.

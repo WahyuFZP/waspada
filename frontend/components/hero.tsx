@@ -35,7 +35,7 @@ export function Hero({ status, pulseKey }: { status: StreamStatus; pulseKey: str
       </motion.div>
 
       <div className="mx-auto max-w-6xl text-center">
-        <h1 id="hero-title" className="font-display text-5xl font-bold leading-[0.95] sm:text-6xl md:text-8xl">
+        <h1 id="hero-title" className="font-body text-3xl font-bold leading-[1.1] sm:text-5xl md:text-6xl">
           <motion.span className="block" {...rise(0)}>
             Satu kejadian tampak biasa.
           </motion.span>

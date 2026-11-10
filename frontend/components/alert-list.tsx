@@ -42,7 +42,7 @@ export function AlertList({
   return (
     <section aria-labelledby="alerts-title" className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="alerts-title" className="font-display text-3xl font-bold">
+        <h2 id="alerts-title" className="font-pixel text-xl font-bold md:text-2xl">
           Peringatan
         </h2>
         <Segmented

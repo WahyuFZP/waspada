@@ -130,7 +130,7 @@ export default function Boot() {
             <p className="font-data mt-3 text-xs tracking-wide text-ink-muted">
               Wide-Area Signal Processing for Alerting and Domain Awareness
             </p>
-            <p className="font-data mt-4 max-w-xl text-sm leading-relaxed text-ink-muted md:text-base">
+            <p className="mt-4 max-w-xl text-base text-ink-muted md:text-lg">
               Teman jaga keamanan digital satuan. Kami pantau kabar ancaman dan bantu memeriksa aplikasi mencurigakan,
               supaya Anda bisa bertindak <span className="font-pixel text-ink">sebelum</span> terlambat.
             </p>
@@ -151,7 +151,7 @@ export default function Boot() {
                       <span className="font-data block text-[11px] text-ink-muted">{m.tag}</span>
                     </span>
                   </span>
-                  <span className="font-data text-sm text-ink-muted">{m.desc}</span>
+                  <span className="text-base text-ink-muted">{m.desc}</span>
                   <span className="font-pixel mt-auto self-start border-2 border-ink bg-ink px-3 py-1 text-[11px] uppercase text-bg">
                     Masuk →
                   </span>
@@ -160,7 +160,7 @@ export default function Boot() {
             ))}
           </motion.ul>
 
-          <motion.p className="font-data text-xs text-ink-muted" {...rise(0.35)}>
+          <motion.p className="text-base text-ink-muted" {...rise(0.35)}>
             Data demo bersifat sintetis atau berasal dari sumber publik. Murni pemantauan, bukan alat ofensif.
           </motion.p>
         </div>

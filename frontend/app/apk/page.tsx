@@ -47,7 +47,7 @@ export default function ApkUploadPage() {
       <main className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-10 md:px-6">
         <header className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
           <Reveal className="max-w-3xl">
-            <h1 className="font-display text-4xl font-bold leading-tight md:text-6xl">Periksa APK sebelum dipasang</h1>
+            <h1 className="font-body text-3xl font-bold leading-tight md:text-5xl">Periksa APK sebelum dipasang</h1>
             <p className="mt-3 text-ink-muted md:text-lg">
               Unggah file APK yang didapat di luar Play Store, misalnya kiriman WhatsApp berupa undangan, foto paket, atau
               surat tilang. File hanya dibaca, tidak pernah dipasang atau dijalankan. Hasilnya berupa indikasi untuk
@@ -106,7 +106,7 @@ export default function ApkUploadPage() {
               e.target.value = "";
             }}
           />
-          <p role="status" className="mt-3 min-h-6 text-sm text-sev-critical">
+          <p role="status" className="mt-3 min-h-6 text-base text-sev-critical">
             {error && `Gagal memeriksa: ${error}`}
           </p>
         </section>
@@ -114,7 +114,7 @@ export default function ApkUploadPage() {
 
         <Reveal>
         <section aria-labelledby="riwayat-title" className="flex flex-col gap-3">
-          <h2 id="riwayat-title" className="font-display text-3xl font-bold">
+          <h2 id="riwayat-title" className="font-pixel text-xl font-bold md:text-2xl">
             Riwayat pemeriksaan
           </h2>
           {historyError && (
@@ -130,7 +130,7 @@ export default function ApkUploadPage() {
           )}
           {!!history?.length && (
             <div className="overflow-x-auto rounded-xl border border-line">
-              <table className="w-full min-w-[560px] text-left text-sm">
+              <table className="w-full min-w-[560px] text-left text-base">
                 <thead className="font-data text-xs text-ink-muted">
                   <tr className="border-b border-line">
                     <th className="px-4 py-3 font-normal">File</th>

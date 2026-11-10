@@ -33,7 +33,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-2">
       <dt className="font-data text-xs text-ink-muted">{label}</dt>
-      <dd className="min-w-0 break-words text-sm">{value ?? <span className="text-ink-muted">-</span>}</dd>
+      <dd className="min-w-0 break-words text-base">{value ?? <span className="text-ink-muted">-</span>}</dd>
     </div>
   );
 }
@@ -74,7 +74,7 @@ export default function ApkResultPage() {
             >
               <div className="min-w-0">
                 <p className="font-data text-xs uppercase tracking-[0.12em]">Risiko {r.level_risiko}</p>
-                <h1 className="font-display mt-1 break-all text-3xl font-bold text-ink md:text-4xl">{r.file.nama}</h1>
+                <h1 className="font-pixel mt-1 break-all text-xl font-bold text-ink md:text-2xl">{r.file.nama}</h1>
                 <p className="mt-2 max-w-2xl text-ink">{SUMMARY[r.level_risiko]}</p>
               </div>
               <div className="shrink-0 text-center">
@@ -88,7 +88,7 @@ export default function ApkResultPage() {
             {r.analisa_akhir && <FinalAnalysisCard a={r.analisa_akhir} />}
 
             {!!r.tahap_gagal?.length && (
-              <div role="alert" className="rounded-lg border border-sev-high/50 bg-sev-high/10 p-4 text-sm">
+              <div role="alert" className="rounded-lg border border-sev-high/50 bg-sev-high/10 p-4 text-base">
                 <p className="font-semibold text-sev-high">Analisis tidak lengkap</p>
                 <p className="mt-1 text-ink">
                   Bagian berikut tidak dapat diperiksa, sehingga skor bisa lebih rendah dari risiko sebenarnya:
@@ -105,7 +105,7 @@ export default function ApkResultPage() {
 
             <section aria-labelledby="temuan-title" className="flex flex-col gap-3">
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <h2 id="temuan-title" className="font-display text-3xl font-bold">
+                <h2 id="temuan-title" className="font-pixel text-xl font-bold md:text-2xl">
                   Temuan ({r.temuan.length})
                 </h2>
                 <button
@@ -152,7 +152,7 @@ export default function ApkResultPage() {
 
             <Reveal className="grid gap-6 lg:grid-cols-2">
               <section aria-labelledby="meta-title" className="rounded-xl border border-line bg-surface p-4">
-                <h2 id="meta-title" className="font-display text-2xl font-bold">
+                <h2 id="meta-title" className="font-pixel text-lg font-bold md:text-xl">
                   Aplikasi
                 </h2>
                 <dl className="mt-3 flex flex-col gap-1.5">
@@ -173,11 +173,11 @@ export default function ApkResultPage() {
               </section>
 
               <section aria-labelledby="perm-title" className="rounded-xl border border-line bg-surface p-4">
-                <h2 id="perm-title" className="font-display text-2xl font-bold">
+                <h2 id="perm-title" className="font-pixel text-lg font-bold md:text-xl">
                   Izin berisiko ({r.permission.berbahaya.length} dari {r.permission.semua.length})
                 </h2>
                 <ul className="mt-3 flex flex-wrap gap-1.5">
-                  {r.permission.berbahaya.length === 0 && <li className="text-sm text-ink-muted">Tidak ada.</li>}
+                  {r.permission.berbahaya.length === 0 && <li className="text-base text-ink-muted">Tidak ada.</li>}
                   {r.permission.berbahaya.map((p) => (
                     <li key={p} className="font-data rounded-sm bg-surface-2 px-2 py-0.5 text-xs">
                       {p.replace("android.permission.", "")}
@@ -186,7 +186,7 @@ export default function ApkResultPage() {
                 </ul>
                 <h3 className="font-data mt-5 text-xs text-ink-muted">URL & IP tertanam ({r.url_ip.length})</h3>
                 <ul className="mt-2 max-h-48 overflow-y-auto">
-                  {r.url_ip.length === 0 && <li className="text-sm text-ink-muted">Tidak ada.</li>}
+                  {r.url_ip.length === 0 && <li className="text-base text-ink-muted">Tidak ada.</li>}
                   {r.url_ip.map((u) => (
                     <li key={u} className="font-data break-all py-0.5 text-xs">
                       {u}
@@ -196,7 +196,7 @@ export default function ApkResultPage() {
               </section>
             </Reveal>
 
-            <p className="text-sm text-ink-muted">{r.catatan}</p>
+            <p className="text-base text-ink-muted">{r.catatan}</p>
           </>
         )}
       </main>

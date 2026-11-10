@@ -22,7 +22,7 @@
 /* inline: variabel next/font dipasang di <body>, jadi utilitas harus merujuknya langsung, bukan lewat :root */
 @theme inline {
   --font-display: var(--font-barlow-condensed), sans-serif;
-  --font-body: var(--font-public-sans), sans-serif;
+  --font-body: var(--font-pixelify), sans-serif;
   --font-data: var(--font-plex-mono), monospace;
   --font-pixel: var(--font-silkscreen), monospace;
 }
@@ -35,7 +35,8 @@ html {
 body {
   background: var(--color-bg);
   color: var(--color-ink);
-  font-family: var(--font-public-sans), sans-serif;
+  font-family: var(--font-pixelify), sans-serif;
+  line-height: 1.6; /* font piksel butuh jarak baris lebih lega agar kalimat panjang tetap mudah diikuti */
 }
 
 :focus-visible {
