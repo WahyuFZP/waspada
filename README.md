@@ -171,7 +171,7 @@ Sumber nyata:
 
 ```bash
 docker compose exec backend python kev.py   # katalog CISA KEV terbaru x assets.yaml (aman diulang)
-docker compose exec backend python rss.py   # polling 21 feed berita setiap 5 menit (feeds.yaml)
+docker compose exec backend python rss.py   # polling 34 feed (berita + teknologi/siber) setiap 5 menit (feeds.yaml)
 ```
 
 ### Log nyata: pengirim log dan server SSH latihan

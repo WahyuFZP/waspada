@@ -5,12 +5,17 @@
 topics:
   natuna: [natuna, laut china selatan, laut cina selatan, laut natuna utara, north natuna sea, south china sea, zee indonesia]
   papua: [papua, kkb, opm]
-  siber_nasional: [serangan siber, peretasan, peretas, ransomware, malware, kebocoran data, data breach, cyberattack, cyber attack, ddos, bssn]
+  # dalam & luar negeri: korelasi lintas wilayah memakai topik yang sama
+  siber: [serangan siber, peretasan, peretas, ransomware, malware, kebocoran data, data breach, cyberattack, cyber attack, ddos, bssn,
+          phishing, phising, zero-day, zero day, kerentanan, vulnerability, vulnerabilities, botnet, spyware, backdoor, hacker, hackers,
+          judi online, deface, defacement]
   perbatasan_timor: [atambua, motaain, perbatasan timor, timor leste border]
   terorisme: [teroris, terorisme, densus 88, terrorism, terrorist]
 
 categories:
-  incident: [insiden, kapal asing, menerobos, pelanggaran, intrusion, incursion, bentrok, clash, serangan, penyerangan, attack, ledakan, explosion, standoff, collision, peretasan, bocor, breach, hacked]
+  incident: [insiden, kapal asing, menerobos, pelanggaran, intrusion, incursion, bentrok, clash, serangan, penyerangan, attack, ledakan, explosion, standoff, collision, peretasan, bocor, breach, hacked,
+             diretas, dibobol, exploited, exploit, eksploitasi, compromised, leak, leaked, stolen, hijack, hijacks, hijacked]
   diplomatic: [nota protes, protes diplomatik, memanggil duta besar, duta besar, diplomatik, menlu, kemlu, kementerian luar negeri, diplomatic protest, summons ambassador, ambassador, diplomat, foreign ministry]
-  military: [kerahkan, pengerahan, kri, tni, militer, pasukan, tentara, bakamla, alutsista, latihan militer, siaga, deploy, warship, navy, naval, military, troops, armed forces, coast guard, armada]
+  # "deploy" sengaja tidak dipakai: berita siber memakainya untuk malware ("hackers deploy backdoor"), bukan pasukan
+  military: [kerahkan, pengerahan, kri, tni, militer, pasukan, tentara, bakamla, alutsista, latihan militer, siaga, warship, navy, naval, military, troops, armed forces, coast guard, armada]
   economic: [nelayan, perikanan, embargo, sanksi, fishing, sanctions]

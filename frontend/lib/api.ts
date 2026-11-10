@@ -87,7 +87,7 @@ export const hostOf = (url?: string | null) => {
   }
 };
 
-// "siber_nasional" -> "Siber nasional"
+// "perbatasan_timor" -> "Perbatasan timor"
 export const topicLabel = (t?: string) => (t ? t[0].toUpperCase() + t.slice(1).replace(/_/g, " ") : "-");
 
 export const formatTime = (ts: string) =>
