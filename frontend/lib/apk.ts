@@ -10,6 +10,7 @@ export type Finding = {
   bobot: number;
   bukti: string[];
   penjelasan: string;
+  edukasi?: { apa: string; kenapa: string; dampak: string }; // kartu "Pelajari dulu" (opsional)
 };
 
 export type Verdict = "Berbahaya" | "Mencurigakan" | "Tidak ditemukan indikasi berbahaya";
@@ -37,11 +38,21 @@ export type ScanResult = {
   skor: number;
   level_risiko: Level;
   analisa_akhir?: FinalAnalysis; // tidak ada di laporan lama
+  konteks_kepatuhan?: { relevansi: string; kanal_lapor: { nama: string; cara: string }[]; disclaimer: string } | null;
+  draf_disclosure?: { subjek: string; badan: string; catatan: string } | null; // draf lapor santun (#18)
   tahap_gagal?: string[]; // tidak ada di laporan lama
   catatan: string;
 };
 
-export type ScanSummary = Pick<ScanResult, "scan_id" | "scanned_at" | "skor" | "level_risiko"> & { nama: string; sha256: string };
+export type ScanSummary = Pick<ScanResult, "scan_id" | "scanned_at" | "skor" | "level_risiko"> & { nama: string; sha256: string; package?: string };
+
+export type ScanDiff = {
+  baru: Finding[];
+  hilang: Finding[];
+  tetap: Finding[];
+  delta: { skor_lama: number; skor_baru: number; level_lama: Level; level_baru: Level; temuan_lama: number; temuan_baru: number };
+  pembanding: { lama: { scan_id: string; scanned_at: string }; baru: { scan_id: string; scanned_at: string } };
+};
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${APK_API}${path}`, { cache: "no-store" });
@@ -51,6 +62,8 @@ async function get<T>(path: string): Promise<T> {
 
 export const listScans = () => get<ScanSummary[]>("/scans");
 export const getScan = (id: string) => get<ScanResult>(`/scans/${encodeURIComponent(id)}`);
+export const diffScan = (id: string, vs: string) =>
+  get<ScanDiff>(`/scans/${encodeURIComponent(id)}/diff?vs=${encodeURIComponent(vs)}`);
 
 // XHR (bukan fetch) karena hanya XHR yang memberi progres unggah
 export function scanApk(file: File, onProgress: (pct: number) => void): Promise<ScanResult> {

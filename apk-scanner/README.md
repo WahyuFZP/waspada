@@ -60,11 +60,25 @@ Tanpa kunci, laporan menandai pemeriksaan ini "dilewati".
 | R12 | Aplikasi judi online: ≥2 istilah taruhan (kasino, togel, sabung, …) + alur setor/tarik dana. Analisa Akhir selalu *Berbahaya* | 30 |
 | R13 | Kunci rahasia server tertanam (mis. file `.env` di dalam APK). Hanya nama kunci yang dilaporkan | 10 |
 | R14 | Berusaha menghindari pemeriksaan (APKiD: deteksi emulator, anti-debug, manipulasi resource) | 10 |
+| R15 | Pola pencegat OTP: receiver `SMS_RECEIVED` + ≥2 pemberat (prioritas >0, `SEND_SMS`, `BOOT_COMPLETED`, `READ_PHONE_STATE`); tidak ikut R07 karena syaratnya sama dengan R01 | 25 |
+| R16 | Meniru aplikasi resmi (aplikasi saudara resmi seperti WhatsApp Business dikecualikan): package menumpang nama resmi / package resmi berkunci debug, label homoglyph, label menyebut merek lain; versi janggal & App Link palsu menguatkan | 20–60 |
+| R17 | Muatan tersembunyi: berkas "gambar" berisi ZIP/DEX/ELF, atau DEX/ELF di `assets/` | 15–40 |
+| R18 | Penanda uji antivirus EICAR | 30 |
+| R19 | Jejak apktool (`apktool.yml`, `original/`): APK dirakit ulang | 10 |
+| R20 | WebView tidak aman: `addJavascriptInterface` dan/atau override `onReceivedSslError` (+akses file). Maks. 25 agar tidak memvonis sendirian: SDK iklan sah punya pola yang sama | 10–25 |
+| R21 | Lalu lintas tidak aman: `usesCleartextTraffic`, NSC `cleartextTrafficPermitted="true"`, CA pengguna (nilainya dibaca; config pengetat tidak tertandai) | 15–30 |
+| R22 | Manifest lemah: `debuggable`, provider exported+grantUri, StrandHogg (`taskAffinity=""`+`singleTask`) | 10–30 |
+| R23 | Jejak alat analisis Frida/Xposed (cek root/emulator saja tidak dihitung: ada di Firebase Crashlytics) | 15 |
+| R24–R26 | Kapabilitas lazim: pustaka native (.so), layanan push FCM, pembacaan identitas perangkat — bobot 30 tampil di laporan, tetapi sumbangan gabungannya ke skor dibatasi 29 (`scoring.KAP_MAKS`) | 30 |
+| R27 | Manifest tidak terbaca walau arsip utuh (mungkin sengaja dirusak) | 20 |
+| R28 | Tanda tangan tidak cocok dengan penerbit resmi (`signer_resmi.json`) | 50 |
 
 Selain DEX dan resource, scanner juga membaca string di library native (`lib/*/*.so`, maks. 32 MB per file),
 karena aplikasi Flutter menaruh logikanya di `libapp.so`. Tautan pendek tanpa `https://` (`bit.ly/…`) ikut tertangkap.
 
-Skor = min(100, jumlah bobot); 0–29 Rendah, 30–59 Sedang, 60–100 Tinggi.
+R01 bernilai 30 (bukan 20) bila ada receiver `SMS_RECEIVED`. Skor = min(100, jumlah bobot); 0–29 Rendah, 30–59 Sedang, 60–100 Tinggi.
+
+Semua rule bisa dijalankan dari terminal tanpa Docker/API: `python cli.py app.apk` (mencetak `VERDICT=` per APK).
 
 ## Test
 

@@ -93,3 +93,20 @@
     - match: {event_type: news.incident, region: domestic}
     - match: {event_type: news.diplomatic, region: foreign}
     - match: {event_type: news.military}
+
+# ---------- Jembatan pemeriksa aset WASPADA (apk/web scanner -> SIEM) ----------
+
+- name: Temuan pemeriksa aset kritis
+  severity: critical
+  window: 1m
+  group_by: [host]
+  # tanpa tag MITRE: satu rule melayani temuan APK dan web, T1190 hanya cocok untuk web
+  steps:
+    - match: {event_type: scanner.finding, severity: critical}
+
+- name: Temuan pemeriksa aset berisiko tinggi
+  severity: high
+  window: 1m
+  group_by: [host]
+  steps:
+    - match: {event_type: scanner.finding, severity: high}

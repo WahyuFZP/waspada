@@ -1,7 +1,20 @@
 # PRD: APK Security Scanner (MVP)
 
-Status: Draft v1.2 · Tanggal: 2026-11-01 · Pemilik: Wahyu Fikri Zeni Putra
-Revisi dari v1.1 setelah uji APK dompet digital nyata: menambah Analisa Akhir, analisis sertifikat, dan cek hash opsional.
+Status: Draft v1.3 · Tanggal: 2026-11-03 · Pemilik: Wahyu Fikri Zeni Putra
+Revisi dari v1.2 setelah uji korpus 13 APK fixture (benign, bersinyal scam): scanner hanya menangkap 1 dari 12 ancaman,
+jadi rule engine diperluas (R15–R28; R12–R14 sudah dipakai rule judi, rahasia tertanam, dan menghindari analisis) dan parser mengekstrak atribut manifest, config jaringan, dan isi arsip.
+
+## Perubahan dari v1.2 (v1.3)
+
+| Bagian | Perubahan | Alasan |
+|---|---|---|
+| §6 | Parser menambah tahap *Atribut manifest* (label, debuggable, cleartext, prioritas receiver, provider terbuka, StrandHogg, App Link), *Network security config* (nilai dibaca via AXML), *Isi arsip* (.so, muatan tersamar, EICAR, jejak apktool); `lib/` dibaca oleh tahap string native (§6 langkah 4) | Rule baru butuh fakta yang sebelumnya tidak diekstrak; `launchMode` di AXML adalah angka (`2` = singleTask) |
+| §7 R01 | +10 bila ada receiver `SMS_RECEIVED` | Receiver adalah bukti lebih kuat (catatan v1.1), tetapi dulu tanpa bobot: cadangan SMS sah dan pencuri OTP sama-sama 20 |
+| §7 R15 | Pola pencegat OTP (receiver + ≥2 pemberat), **tidak** ikut kombinasi R07 (syaratnya sama dengan R01, jadi aplikasi SMS sah akan selalu Tinggi) | Membedakan pencuri OTP (prioritas maks, `SEND_SMS`, boot) dari utilitas SMS biasa tanpa menaikkan yang terakhir |
+| §7 R16–R23 | Peniruan aplikasi resmi (aplikasi saudara resmi dikecualikan; kata umum dana/jago/jenius tidak dicocokkan), muatan tersembunyi/EICAR/apktool, WebView tidak aman (maks 25, string `proceed` tidak dipakai karena ada di OkHttp), jaringan & manifest lemah, anti-analisis (hanya jejak Frida/Xposed, 15) | Kategori scam yang sebelumnya 0 di korpus; bobot dibatasi agar kapabilitas yang lazim di app sah tidak sendirian mencapai Tinggi |
+| §7 R24–R26 | Native, FCM, identitas perangkat: bobot 30 tampil di laporan, tetapi sumbangan gabungannya ke skor dibatasi 29 (`scoring.KAP_MAKS`) | Aplikasi Flutter + Firebase + analitik yang sah tidak boleh dicap berbahaya hanya karena kapabilitas umum |
+| §7 R27–R28 | Manifest sengaja dirusak; tanda tangan tidak cocok penerbit resmi (`signer_resmi.json`) | Menutup celah anti-analisis dan APK resmi yang ditandatangani ulang |
+| §12 | Test rule baru (data buatan) + `cli.py` untuk menilai korpus lewat `run_scan.py` | Verifikasi end-to-end tanpa API |
 
 ## Perubahan dari v1.1
 

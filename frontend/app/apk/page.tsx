@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ApkHeader } from "@/components/apk-header";
 import { Phone3D } from "@/components/objects-3d";
 import { Reveal } from "@/components/reveal";
+import { ModuleHeader } from "@/components/module-header";
 import { formatTime } from "@/lib/api";
 import { LEVEL_STYLE, listScans, scanApk, type ScanSummary } from "@/lib/apk";
 
@@ -43,7 +43,7 @@ export default function ApkUploadPage() {
 
   return (
     <>
-      <ApkHeader />
+      <ModuleHeader active="apk" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-10 md:px-6">
         <header className="grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
           <Reveal className="max-w-3xl">

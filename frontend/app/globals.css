@@ -129,3 +129,23 @@ body {
     0 2px 0 #050906,
     0 6px 10px -8px rgb(0 0 0 / 0.7);
 }
+/* Cetak / Simpan PDF (#12): tema terang hemat tinta + kartu tidak terpotong antar-halaman. */
+@media print {
+  :root {
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-2: #f3f4f1;
+    --color-line: #cfd4cb;
+    --color-ink: #10140f;
+    --color-ink-muted: #4a5048;
+  }
+  body {
+    background: #ffffff;
+  }
+  section,
+  li,
+  details,
+  pre {
+    break-inside: avoid;
+  }
+}

@@ -41,7 +41,7 @@ app.add_middleware(CORSMiddleware, allow_origins=os.environ.get("CORS_ORIGINS", 
 topics = load_topics()
 assets = load_assets()
 engine = Engine(load_rules())
-store = Store(os.environ.get("DATABASE_URL", "postgresql://waspada:waspada@localhost:5432/waspada"))
+store = Store(os.environ.get("DATABASE_URL", "postgresql://waspada:waspada@localhost:5433/waspada"))
 subscribers: set[asyncio.Queue] = set()
 INGEST_TOKEN = os.environ.get("INGEST_TOKEN") or None
 

@@ -42,7 +42,7 @@ flowchart LR
 
 | Layanan | Teknologi | Port | Peran |
 |---|---|---|---|
-| `db` | PostgreSQL 16 | 127.0.0.1:5432 | Menyimpan event dan alert SIEM |
+| `db` | PostgreSQL 16 | 127.0.0.1:5433 | Menyimpan event dan alert SIEM |
 | `backend` | Python 3.12, FastAPI | 127.0.0.1:8000 | Ingest, normalisasi, GeoIP, korelasi, notifikasi, SSE |
 | `apk-scanner` | Python 3.11, FastAPI, Androguard 4.1.4, APKiD 3.2.0 | 127.0.0.1:8001 | Analisis statis APK |
 | `ssh-target` | Alpine, OpenSSH | 127.0.0.1:2222 | Server latihan untuk demo; menulis `auth.log` asli ke volume `demolog`. Login berhasil tidak mendapat shell |

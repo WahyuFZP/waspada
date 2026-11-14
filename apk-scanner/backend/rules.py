@@ -1,13 +1,61 @@
 """Rule engine MVP (PRD v1.2 §7). Setiap rule hanya menghasilkan Finding bila terpicu, lengkap dengan bukti."""
 import ipaddress
+import json
+import os
 import re
+import unicodedata
 from collections import Counter
 from urllib.parse import urlsplit
 
+import edukasi
 from models import Finding
 
 P = "android.permission."
 SMS_RECEIVED = "android.provider.Telephony.SMS_RECEIVED"
+BOOT_COMPLETED = "android.intent.action.BOOT_COMPLETED"
+FCM_EVENT = "com.google.firebase.MESSAGING_EVENT"
+# R16: package resmi -> nama merek yang sering ditiru APK "update" palsu. Dirawat manual; entri yang keliru hanya
+# berarti tidak cocok (tidak menimbulkan false positive). Sidik jari penerbit resmi ditunda ke v2 (PRD §2).
+BRAND_PACKAGES = {
+    "id.co.bri.brimo": "BRImo", "com.bca": "BCA mobile", "id.bmri.livin": "Livin' by Mandiri",
+    "src.com.bni": "BNI Mobile Banking", "com.bsm.activity2": "BSI Mobile", "id.co.cimbniaga.mobile.android": "OCTO Mobile",
+    "com.btpn.dc": "Jenius", "com.jago.digitalBanking": "Jago", "id.dana": "DANA", "ovo.id": "OVO",
+    "com.gojek.app": "Gojek", "com.shopee.id": "Shopee", "com.telkom.mwallet": "LinkAja",
+    "com.tokopedia.tkpd": "Tokopedia", "com.whatsapp": "WhatsApp", "org.telegram.messenger": "Telegram",
+}
+# "dana", "jago", "jenius" juga kata sehari-hari ("Dana Cepat", "Jago Masak"), jadi tidak dipakai mencocokkan label
+BRAND_TOKENS = {t: pkg for pkg, nama in BRAND_PACKAGES.items()
+                if (t := re.sub(r"[^a-z0-9]", "", nama.split()[0].lower())) not in {"dana", "jago", "jenius"}}
+# aplikasi resmi lain dari penerbit yang sama: labelnya wajar menyebut merek induk
+SAUDARA_RESMI = {"com.whatsapp.w4b": "com.whatsapp", "com.bca.mybca.omni": "com.bca"}
+
+
+def _muat_pin_penandatangan():
+    """Sidik jari SHA-256 penandatangan RESMI per package (R28). Berkas boleh kosong/absen -> R28 dorman.
+    Sidik jari dinormalkan (titik dua/spasi dibuang, huruf kecil) saat dimuat."""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "signer_resmi.json"), encoding="utf-8") as fh:
+            return {pkg: [s.replace(":", "").replace(" ", "").lower() for s in sidik]
+                    for pkg, sidik in json.load(fh).get("pin", {}).items()}
+    except (OSError, ValueError):
+        return {}
+
+
+SIGNER_PINS = _muat_pin_penandatangan()
+# Huruf Cyrillic/Yunani yang tampak sama dengan Latin, dipetakan balik agar label "ВRImo" terbaca "BRImo"
+CONFUSABLE = str.maketrans(
+    "АВЕКМНОРСТХаеорсухіѕј"
+    "ΑΒΕΖΗΙΚΜΝΟΡΤΥΧον",
+    "ABEKMHOPCTXaeopcyxisj" "ABEZHIKMNOPTYXov")
+UNVERIFIABLE_TLD = (".test", ".local", ".invalid", ".example")  # Digital Asset Links tidak mungkin terverifikasi
+# R23: string anti-analisis, dicocokkan persis dengan string DEX (bukan substring) agar kata umum tidak ikut
+ANTI_ANALISIS = {
+    "root": ("/system/bin/su", "/system/xbin/su", "/sbin/su", "eu.chainfire.supersu", "com.topjohnwu.magisk"),
+    "emulator": ("generic", "goldfish", "ranchu", "sdk_gphone", "google_sdk", "genymotion", "vbox86", "nox"),
+    "instrumentasi": ("frida-server", "frida", "LIBFRIDA", "xposed", "de.robv.android.xposed.XposedBridge"),
+    "debugger": ("isDebuggerConnected",),
+}
+DEVICE_ID = ("android_id", "getDeviceId", "getImei", "getSubscriberId", "getSimSerialNumber")
 # token bisa menempel langsung setelah "/bot" (tanpa batas kata), jadi URL + token ditangkap sebagai satu bukti
 TELEGRAM_RE = re.compile(r"api\.telegram\.org/bot(?:\d{8,10}:[A-Za-z0-9_-]{35})?|(?<![\w:])\d{8,10}:[A-Za-z0-9_-]{35}(?![\w-])")
 TOKEN_RE = re.compile(r"(\d{8,10}):([A-Za-z0-9_-]{35})")
@@ -54,20 +102,46 @@ def _components(p, kind, permission, action):
             if c["type"] == kind and (c["permission"] == permission or action in c["actions"])]
 
 
+def _label_tokens(label):
+    """'ВRImo' -> {'brimo'}: huruf serupa dipetakan ke Latin, lalu dipecah per kata (cocok utuh, bukan substring)."""
+    return set(re.split(r"[^a-z0-9]+", unicodedata.normalize("NFKC", label or "").translate(CONFUSABLE).lower())) - {""}
+
+
+def _mixed_script(label):
+    """Satu kata memuat huruf Latin dan huruf aksara lain (homoglyph); label yang seluruhnya non-Latin tidak dihitung."""
+    return any(any("a" <= c.lower() <= "z" for c in w) and any(c.isalpha() and ord(c) > 0x024F for c in w)
+               for w in (label or "").split())
+
+
 def evaluate(p, packer):
     """p = hasil parser.parse(); packer = hasil packer.scan(). -> list[Finding]"""
     perms = set(p["permissions"])
+    man = p.get("manifest") or {}  # atribut manifest tambahan; kosong pada data uji lama (semua rule baru memakai .get)
     found = []
 
     def hit(*args, **kw):
         found.append(Finding(*args, **kw))
 
     sms = sorted(perms & {P + "READ_SMS", P + "RECEIVE_SMS"})
+    sms_receivers = [c["name"] for c in p["components"] if c["type"] == "receiver" and SMS_RECEIVED in c["actions"]]
     if sms:
-        receivers = [f"receiver {c['name']}: {SMS_RECEIVED}" for c in p["components"]
-                     if c["type"] == "receiver" and SMS_RECEIVED in c["actions"]]
-        hit("R01", "Aplikasi dapat membaca SMS", "tinggi", 20, sms + receivers,
+        receivers = [f"receiver {n}: {SMS_RECEIVED}" for n in sms_receivers]
+        # receiver SMS_RECEIVED adalah bukti lebih kuat daripada izin saja (catatan PRD v1.1 §7 R01): +10
+        hit("R01", "Aplikasi dapat membaca SMS", "tinggi", 30 if receivers else 20, sms + receivers,
             "Izin SMS sering dipakai untuk mencuri kode OTP bank atau WhatsApp yang dikirim lewat SMS.")
+
+    # R15: bentuk pencegat OTP. Izin SMS + receiver saja masih wajar (cadangan SMS); >=2 pemberat adalah pola pencuri.
+    if sms and sms_receivers:
+        prio = max((man.get("prioritas_receiver", {}).get(n, 0) for n in sms_receivers), default=0)
+        boot = [c["name"] for c in p["components"] if c["type"] == "receiver" and BOOT_COMPLETED in c["actions"]]
+        pemberat = ([f"receiver SMS_RECEIVED prioritas {prio} (mendahului aplikasi SMS bawaan)"] if prio > 0 else []) \
+            + ([P + "SEND_SMS"] if P + "SEND_SMS" in perms else []) \
+            + ([f"receiver {boot[0]}: {BOOT_COMPLETED} (aktif lagi setelah restart)"] if boot else []) \
+            + ([P + "READ_PHONE_STATE"] if P + "READ_PHONE_STATE" in perms else [])
+        if len(pemberat) >= 2:
+            hit("R15", "Pola pencegat OTP lewat SMS", "tinggi", 25, pemberat,
+                "Receiver SMS berprioritas tinggi, izin kirim SMS, dan aktif otomatis setelah restart adalah bentuk khas "
+                "aplikasi pencegat kode OTP, bukan aplikasi cadangan SMS biasa.")
 
     acc = _components(p, "service", P + "BIND_ACCESSIBILITY_SERVICE", "android.accessibilityservice.AccessibilityService")
     if acc:
@@ -138,10 +212,142 @@ def evaluate(p, packer):
             "Aplikasi memeriksa apakah sedang berjalan di emulator atau dianalisis, agar perilaku aslinya tersembunyi "
             "dari peneliti. Aplikasi bank sah kadang juga melakukannya, jadi ini ciri pendukung, bukan bukti tunggal.")
 
-    combo = [f.rule_id for f in found if f.rule_id in {"R01", "R02", "R03", "R04", "R10"}]
+    # R16: meniru aplikasi resmi. Nama package saja tidak bisa membedakan app asli dari tiruan (sidik jari resmi
+    # ditunda ke v2), jadi yang dinilai: package menumpang nama resmi, package resmi berkunci debug/tanpa tanda
+    # tangan, label homoglyph, atau label menyebut merek yang bukan miliknya. Versi janggal & App Link palsu menguatkan.
+    pkg, label, cert = p.get("package") or "", man.get("label") or "", p.get("sertifikat") or {}
+    official = next((o for o in BRAND_PACKAGES if pkg == o or (pkg.startswith(o + ".") and pkg not in SAUDARA_RESMI)), None)
+    disebut = next((BRAND_TOKENS[t] for t in _label_tokens(label) if t in BRAND_TOKENS), None)
+    tiru, bobot = [], 0
+    if official and pkg != official:
+        tiru.append(f"package {pkg} menumpang nama resmi {official} ({BRAND_PACKAGES[official]})")
+        bobot += 30
+    elif official and (cert.get("debug") or (cert and not cert.get("skema"))):
+        tiru.append(f"package resmi {BRAND_PACKAGES[official]} tetapi berkunci debug / tanpa tanda tangan")
+        bobot += 30
+    if _mixed_script(label):
+        tiru.append(f"label '{label}' mencampur huruf Latin dengan aksara lain (homoglyph)")
+        bobot += 20
+    if disebut and pkg != disebut and SAUDARA_RESMI.get(pkg) != disebut:
+        tiru.append(f"label menyebut {BRAND_PACKAGES[disebut]} tetapi package bukan {disebut}")
+        bobot += 20
+    if tiru:  # penguat hanya dihitung bila sudah ada tanda peniruan
+        vn = p.get("version_name") or ""
+        if vn.startswith("99") or vn.count("9") >= 3:
+            tiru.append(f"versionName {vn} tidak wajar")
+            bobot += 10
+        palsu = [h for h in man.get("applink_host", []) if h.endswith(UNVERIFIABLE_TLD)]
+        if palsu:
+            tiru.append(f"App Link autoVerify ke host yang tidak bisa diverifikasi: {', '.join(palsu)}")
+            bobot += 10
+        hit("R16", "Meniru aplikasi resmi", "tinggi" if bobot >= 30 else "sedang", min(bobot, 60), tiru,
+            "Nama package, label, atau tanda tangan tidak cocok dengan aplikasi resmi yang ditirunya: pola 'update "
+            "BRImo/DANA' palsu yang disebar lewat WhatsApp. Cocokkan penerbit dengan yang tercantum di Google Play.")
+
+    # R28: tanda tangan tak cocok penerbit resmi (repackage-and-resign) — menutup MISS R16 saat package & label
+    # benar tapi APK ditandatangani ULANG. Hanya menilai merek yang sidik jarinya sudah dikurasi (pin tak kosong).
+    pin = SIGNER_PINS.get(official or "", [])
+    if official and pin:
+        observed = (cert.get("sha256") or "").replace(":", "").replace(" ", "").lower()
+        if observed and observed not in pin:
+            hit("R28", f"Tanda tangan tidak cocok dengan penerbit resmi {BRAND_PACKAGES[official]}", "tinggi", 50,
+                [f"sidik jari teramati {observed[:16]}… tidak ada di daftar penandatangan resmi {BRAND_PACKAGES[official]}"],
+                "Package memakai identitas aplikasi resmi tetapi ditandatangani kunci yang BUKAN milik penerbit: ciri "
+                "khas APK yang dibongkar lalu ditandatangani ulang ('update palsu'). Hanya pasang dari Google Play.")
+        elif observed:  # sidik jari cocok penerbit resmi: bukti kuat asli -> batalkan kecurigaan peniruan (R16)
+            found[:] = [fnd for fnd in found if fnd.rule_id != "R16"]
+
+    # R27: manifest tidak terbaca padahal arsip utuh. Bisa korupsi biasa, bisa juga teknik agar pemeriksa menyerah.
+    if p.get("manifest_rusak"):
+        hit("R27", "Manifest tidak terbaca (mungkin sengaja dirusak)", "sedang", 20,
+            [g for g in p.get("galat", []) if g.startswith("Manifest")] or ["AndroidManifest.xml gagal diurai"],
+            "AndroidManifest.xml tidak dapat dibaca walau arsip utuh. Bisa kerusakan biasa, tapi juga teknik agar "
+            "pemeriksa menyerah sementara muatan (DEX/native/aset) tetap ada; sinyal tingkat-arsip tetap diperiksa.")
+
+    # R17-R19: isi arsip. Muatan yang disamarkan sebagai gambar / diselipkan di assets (dropper), EICAR, jejak apktool.
+    ar = p.get("arsip") or {}
+    muatan = ar.get("payload_tersamar", []) + ar.get("payload_eksekusi", [])
+    if muatan:
+        hit("R17", "Muatan tersembunyi di dalam aset", "tinggi",
+            min(40, 25 * bool(ar.get("payload_tersamar")) + 15 * bool(ar.get("payload_eksekusi"))), muatan,
+            "Berkas yang mengaku gambar tetapi berisi ZIP/DEX/ELF, atau kode DEX/native yang diselipkan di assets, "
+            "adalah muatan tahap kedua: dipasang atau dimuat setelah aplikasi pertama dipercaya pengguna.")
+    if ar.get("eicar"):
+        hit("R18", "Mengandung penanda uji antivirus (EICAR)", "tinggi", 30, ar["eicar"],
+            "String EICAR adalah penanda standar untuk menguji antivirus; aplikasi sah tidak pernah memuatnya.")
+    if ar.get("apktool"):
+        hit("R19", "Jejak apktool: APK dibongkar lalu dirakit ulang", "sedang", 10, ar["apktool"],
+            "Sisa berkas apktool menandakan APK ini hasil modifikasi dari APK lain: pola 'aplikasi palsu' yang "
+            "dibuat dari aplikasi resmi yang dibongkar.")
+
+    # R20: WebView tidak aman. Jembatan JS atau abai galat sertifikat saja = rendah; keduanya = wrapper phishing.
+    t = set(p["texts"])
+    bridge = "addJavascriptInterface" in t
+    # "proceed" tidak dipakai sebagai bukti: string itu ada di hampir semua DEX (OkHttp Interceptor.Chain.proceed),
+    # jadi statis hanya terlihat bahwa galat sertifikat ditangani sendiri, bukan pasti diabaikan
+    abai_tls = "onReceivedSslError" in t
+    akses = sorted({s for s in ("setAllowFileAccess", "setAllowUniversalAccessFromFileURLs") if s in t})
+    if bridge or abai_tls:
+        wv = (["addJavascriptInterface (jembatan JavaScript -> kode aplikasi)"] if bridge else []) \
+            + (["onReceivedSslError di-override (galat sertifikat TLS ditangani sendiri, mungkin diabaikan)"] if abai_tls else []) + akses
+        # maks 25 (< ambang Sedang 30): SDK iklan/WebView sah punya pola yang sama, jadi tidak boleh memvonis sendirian
+        hit("R20", "WebView tidak aman", "sedang" if bridge and abai_tls else "rendah",
+            10 * bridge + 10 * abai_tls + (5 if akses else 0), wv,
+            "Halaman login palsu dimuat di WebView: JavaScript halaman bisa memanggil kode aplikasi, dan sertifikat "
+            "TLS palsu diterima tanpa peringatan, sehingga data yang diketik bisa dibaca aplikasi.")
+
+    # R21: konfigurasi jaringan. Nilai config yang dibaca (bukan nama atributnya), jadi config pengetat tidak tertandai.
+    nsc = p.get("nsc") or {}
+    jaringan = (['android:usesCleartextTraffic="true"'] if man.get("cleartext") else []) \
+        + (['network_security_config: cleartextTrafficPermitted="true"'] if nsc.get("cleartext") else []) \
+        + (["network_security_config: mempercayai sertifikat CA yang dipasang pengguna"] if nsc.get("user_ca") else [])
+    if jaringan:
+        hit("R21", "Lalu lintas jaringan tidak aman", "sedang", min(30, 15 * len(jaringan)), jaringan,
+            "Data boleh dikirim tanpa enkripsi atau lewat sertifikat yang dipasang pihak lain, sehingga mudah "
+            "disadap atau dialihkan ke server pelaku.")
+
+    # R22: higiene manifest. Dibatasi 30: aplikasi sah yang ceroboh bisa punya ini, jadi tidak boleh 'Tinggi' sendirian.
+    higiene = (['android:debuggable="true"'] if man.get("debuggable") else []) \
+        + [f"provider {n}: exported + grantUriPermissions" for n in man.get("provider_terbuka", [])] \
+        + [f"activity {n}: taskAffinity kosong + singleTask (StrandHogg)" for n in man.get("hijack_task", [])]
+    if higiene:
+        hit("R22", "Konfigurasi manifest lemah", "sedang",
+            min(30, 10 * bool(man.get("debuggable")) + 10 * bool(man.get("provider_terbuka")) + 15 * bool(man.get("hijack_task"))),
+            higiene, "Mode debug, provider terbuka, atau activity yang bisa menyusup ke task aplikasi lain (StrandHogg) "
+                     "mempermudah pencurian data dan tampilan login palsu.")
+
+    # R23: hanya bila ada jejak Frida/Xposed. Cek root/emulator/debugger saja ada di Firebase Crashlytics (hampir semua
+    # aplikasi), dan versi APKiD-nya sudah dinilai R14. Bobot 15 = sinyal pendukung, bukan vonis.
+    anti = {k: v for k, v in ((k, sorted(set(v) & t)) for k, v in ANTI_ANALISIS.items()) if v}
+    if "instrumentasi" in anti:
+        hit("R23", "Mendeteksi alat analisis (Frida/Xposed)", "sedang", 15,
+            [f"{k}: {', '.join(v)}" for k, v in anti.items()],
+            "Pemeriksaan emulator/root/Frida/debugger dipakai malware untuk berhenti saat sedang dianalisis; "
+            "aplikasi sah memakainya untuk perlindungan, jadi ini sinyal pendukung, bukan vonis.")
+
+    # R24-R26: kapabilitas yang lazim di aplikasi sah (Flutter, Firebase, analitik). Bobot masing-masing 30 tampil di
+    # laporan, tetapi sumbangannya ke skor dibatasi KAP_MAKS di scoring.py agar aplikasi sah tidak dicap berbahaya.
+    if ar.get("native"):
+        hit("R24", "Memuat pustaka native (.so)", "sedang", 30, ar["native"][:10],
+            "Kode native tidak terlihat oleh pemeriksaan DEX, jadi perilaku sebenarnya bisa tersembunyi di sini. "
+            "Wajar di aplikasi Flutter/game; periksa bersama temuan lain.", kapabilitas=True)
+    fcm = [c["name"] for c in p["components"] if c["type"] == "service" and FCM_EVENT in c["actions"]]
+    if fcm:
+        hit("R25", "Menerima pesan push Firebase (FCM)", "sedang", 30, fcm,
+            "Kanal push bisa dipakai pelaku untuk mengirim perintah ke aplikasi setelah terpasang (C2), meski juga "
+            "dipakai hampir semua aplikasi sah.", kapabilitas=True)
+    ident = sorted(set(DEVICE_ID) & t)
+    if ident:
+        hit("R26", "Membaca identitas perangkat", "sedang", 30, ident,
+            "ANDROID_ID/IMEI dipakai untuk mengenali korban di server pelaku, tetapi juga oleh analitik aplikasi sah.",
+            kapabilitas=True)
+
+    combo = [f.rule_id for f in found if f.rule_id in {"R01", "R02", "R03", "R04", "R10"}]  # tanpa R15: syaratnya sama dengan R01, kombinasi selalu terpicu
     if len(combo) >= 2:
         hit("R07", "Kombinasi ciri banking trojan", "tinggi", 25, combo,
             "Masing-masing izin bisa wajar, tetapi gabungannya cocok dengan pola aplikasi pencuri OTP dan data "
             "perbankan.")
 
+    for f in found:  # lampirkan kartu edukasi "Pelajari dulu" per rule_id (#8)
+        f.edukasi = edukasi.EDUKASI.get(f.rule_id, {})
     return sorted(found, key=lambda f: f.rule_id)
