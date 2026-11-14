@@ -1,0 +1,15 @@
+{
+  "_catatan": "Basis data kerentanan pustaka klien (SCA pasif, OWASP A06). Versi rentan bila sejak <= versi < sampai (sejak default 0). Seed kurasi manual dari advisori publik kanonik; perbarui berkala. Deteksi versi dari NAMA FILE <script>/<link>, jadi pustaka tanpa versi di nama file tidak terdeteksi. Keyakinan temuan 'sedang' karena versi ditebak dari nama file.",
+  "pustaka": {
+    "jquery": [
+      {"sampai": "3.5.0", "cve": ["CVE-2020-11022", "CVE-2020-11023"], "referensi": ["https://blog.jquery.com/2020/04/10/jquery-3-5-0-released/"]}
+    ],
+    "bootstrap": [
+      {"sejak": "3.0.0", "sampai": "3.4.1", "cve": ["CVE-2019-8331"], "referensi": ["https://github.com/twbs/bootstrap/releases/tag/v3.4.1"]},
+      {"sejak": "4.0.0", "sampai": "4.3.1", "cve": ["CVE-2019-8331"], "referensi": ["https://github.com/twbs/bootstrap/releases/tag/v4.3.1"]}
+    ],
+    "lodash": [
+      {"sampai": "4.17.21", "cve": ["CVE-2021-23337", "CVE-2020-8203"], "referensi": ["https://github.com/lodash/lodash/releases/tag/4.17.21"]}
+    ]
+  }
+}

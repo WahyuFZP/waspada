@@ -23,7 +23,7 @@ export function Kentongan3D({ className = "" }: { className?: string }) {
   return <LogoMark className={className} label="Logo WASPADA: kentongan" swing />;
 }
 
-// Lima kelompok pemeriksaan Pemeriksa APK (aturan R01–R14), keluar-masuk dari layar ponsel. Isinya apa yang
+// Lima kelompok pemeriksaan Pemeriksa APK (aturan R01–R28), keluar-masuk dari layar ponsel. Isinya apa yang
 // diperiksa, bukan hasil: halaman unggah belum punya hasil scan, jadi angka atau centang di sini akan karangan.
 // x/y/z = posisi akhir relatif ke pusat layar (px): menyebar kiri/atas/bawah; kanan dibatasi agar tidak keluar halaman.
 const CARDS = [

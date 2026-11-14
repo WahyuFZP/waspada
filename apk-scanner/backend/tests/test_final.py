@@ -62,3 +62,10 @@ def test_gambling_is_dangerous_with_specific_advice(monkeypatch):
     f = Finding("R12", "Aplikasi judi online", "tinggi", 30)
     r = final.conclude(parsed(), {}, [f], "Rendah")  # skor rendah pun tetap Berbahaya
     assert r["status"] == "Berbahaya" and "aduankonten.id" in r["saran"][1]
+def test_capability_findings_are_context_not_danger(monkeypatch):
+    monkeypatch.delenv("ABUSECH_AUTH_KEY", raising=False)
+    caps = [Finding("R24", "native", "sedang", 30, kapabilitas=True),
+            Finding("R26", "identitas", "sedang", 30, kapabilitas=True)]
+    r = final.conclude(parsed(), {}, caps, "Rendah")
+    assert r["status"] == "Tidak ditemukan indikasi berbahaya"
+    assert any("Kapabilitas umum" in a for a in r["alasan"])

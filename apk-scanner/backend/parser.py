@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from loguru import logger
 
 from androguard.core.apk import APK
+from androguard.core.axml import AXMLPrinter
 from androguard.core.dex import DEX
 
 logger.remove()  # androguard mencetak log debug sangat banyak ke stderr
@@ -23,6 +24,11 @@ PRINTABLE_RE = re.compile(rb"[\x20-\x7e]{6,}")
 SHORT_RE = re.compile(r"(?<![\w.-])(?:[a-z0-9-]+\.)*(?:bit\.ly|cutt\.ly|s\.id|short\.gy|tinyurl\.com|goo\.gl|is\.gd|"
                       r"shorturl\.at|rb\.gy|ow\.ly|rebrand\.ly)/[A-Za-z0-9_-]{3,}")
 TLD_RE = re.compile(r"[a-z]{2,24}|xn--[a-z0-9-]{1,59}")
+EICAR_SCAN_LIMIT = 1024 * 1024    # EICAR hanya 68 byte; berkas besar tidak perlu dibaca utuh
+EICAR = rb"X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+MAGIC = {b"PK\x03\x04": "zip", b"dex\n": "dex", b"\x7fELF": "elf"}  # isi yang bisa dipasang/dimuat sebagai kode
+IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+LAUNCH_MODE = {"0": "standard", "1": "singleTop", "2": "singleTask", "3": "singleInstance"}  # AXML menyimpan enum sebagai angka
 
 # Izin protectionLevel "dangerous" di AOSP + izin khusus yang sering disalahgunakan. Daftar tetap, karena
 # get_details_permissions() androguard menganggap izin yang tidak ia kenali "dangerous" (mis. INTERNET pada APK lama).
@@ -55,13 +61,23 @@ def _int(value):
 
 
 def _raw_texts(path):
-    """Teks dari resources.arsc & assets: tempat token/URL pelaku sering disimpan selain di DEX."""
+    """Teks dari resources.arsc dan assets: tempat token/URL pelaku sering disimpan selain di DEX (lib/ dibaca _native_texts)."""
     with zipfile.ZipFile(path) as z:
         for info in z.infolist():
             if (info.filename == "resources.arsc" or info.filename.startswith("assets/")) and info.file_size <= RAW_SCAN_LIMIT:
-                data = z.read(info)
+                if (data := _baca(z, info)) is None:
+                    continue
                 # string pool arsc bisa UTF-8 atau UTF-16
                 yield data.decode("latin-1") + "\n" + data.decode("utf-16-le", "ignore")
+
+
+def _baca(z, info):
+    """Isi satu entri, atau None bila entri itu rusak. Android mengabaikan bit "terenkripsi" palsu dan CRC yang salah,
+    jadi APK tetap terpasang; tanpa ini satu entri rekayasa menggagalkan seluruh tahap pemeriksaan (anti-analisis)."""
+    try:
+        return z.read(info)
+    except Exception:
+        return None
 
 
 def _native_texts(path):
@@ -69,7 +85,8 @@ def _native_texts(path):
     with zipfile.ZipFile(path) as z:
         for info in z.infolist():
             if info.filename.startswith("lib/") and info.filename.endswith(".so") and info.file_size <= NATIVE_SCAN_LIMIT:
-                yield "\n".join(s.decode("ascii") for s in PRINTABLE_RE.findall(z.read(info)))
+                if (data := _baca(z, info)) is not None:
+                    yield "\n".join(s.decode("ascii") for s in PRINTABLE_RE.findall(data))
 
 
 def _plausible_host(host):
@@ -90,15 +107,96 @@ def _signer(a):
     }
 
 
-def parse(path):
-    """Path APK yang sudah lolos validator -> dict hasil ekstraksi."""
-    a = APK(path)
-    xml = a.get_android_manifest_xml()
+def _manifest(a, xml, full):
+    """Atribut manifest yang dipakai rule di luar komponen & izin: label, flag aplikasi, prioritas receiver,
+    provider terbuka, activity StrandHogg, dan host App Link yang diklaim terverifikasi."""
+    app = xml.find("application")
+    attr = lambda el, n: el.get(NS + n) if el is not None else None
+    return {
+        "label": a.get_app_name(),
+        "debuggable": attr(app, "debuggable") == "true",
+        "cleartext": attr(app, "usesCleartextTraffic") == "true",
+        "prioritas_receiver": {full(el.get(NS + "name")): max((_int(f.get(NS + "priority")) or 0 for f in el.findall("intent-filter")), default=0)
+                               for el in xml.iter("receiver")},
+        "provider_terbuka": [full(el.get(NS + "name")) for el in xml.iter("provider")
+                             if el.get(NS + "exported") == "true" and el.get(NS + "grantUriPermissions") == "true"],
+        # StrandHogg: taskAffinity kosong + singleTask membuat activity bisa menyusup ke task aplikasi lain (login palsu)
+        "hijack_task": [full(el.get(NS + "name")) for el in xml.iter("activity")
+                        if el.get(NS + "taskAffinity") == "" and LAUNCH_MODE.get(el.get(NS + "launchMode"), el.get(NS + "launchMode")) == "singleTask"],
+        "applink_host": sorted({d.get(NS + "host") for el in xml.iter("activity") for f in el.findall("intent-filter")
+                                if f.get(NS + "autoVerify") == "true" for d in f.findall("data") if d.get(NS + "host")}),
+    }
 
-    package = a.get_package()
+
+def _nsc(path):
+    """res/xml yang berisi network-security-config: izin lalu lintas tanpa TLS dan kepercayaan pada CA pengguna.
+    Nilai atributnya yang dibaca (bukan sekadar nama), supaya config yang justru memperketat tidak ikut tertandai."""
+    out = {"cleartext": False, "user_ca": False}
+    with zipfile.ZipFile(path) as z:
+        for info in z.infolist():
+            if not (info.filename.startswith("res/xml/") and info.filename.endswith(".xml")) or info.file_size > RAW_SCAN_LIMIT:
+                continue
+            try:
+                xml = AXMLPrinter(z.read(info)).get_xml().decode("utf-8", "ignore")
+            except Exception:  # bukan AXML atau rusak: berkas lain tetap diperiksa
+                continue
+            # <debug-overrides> hanya berlaku di build debug, jadi CA pengguna di sana bukan masalah build rilis
+            xml = re.sub(r"<debug-overrides.*?</debug-overrides>", "", xml, flags=re.S)
+            if "<network-security-config" in xml:
+                out["cleartext"] |= 'cleartextTrafficPermitted="true"' in xml
+                out["user_ca"] |= 'src="user"' in xml
+    return out
+
+
+def _magic(head):
+    return next((t for m, t in MAGIC.items() if head.startswith(m)), None)
+
+
+def _arsip(path):
+    """Isi arsip di luar manifest/DEX: pustaka native, muatan yang disamarkan sebagai gambar atau diselipkan di
+    assets (pola dropper), penanda uji antivirus EICAR, dan jejak apktool (APK dibongkar lalu dirakit ulang)."""
+    out = {"native": [], "payload_tersamar": [], "payload_eksekusi": [], "eicar": [], "apktool": []}
+    with zipfile.ZipFile(path) as z:
+        for info in z.infolist():
+            n = info.filename
+            low = n.lower()
+            if low.endswith(".so"):
+                out["native"].append(n)
+            if n == "apktool.yml" or n.startswith(("original/", "unknown/")):
+                out["apktool"].append(n)
+            if info.is_dir():
+                continue
+            try:  # satu entri rusak/berbit enkripsi palsu dilewati, entri lain tetap diperiksa (lihat _baca)
+                with z.open(info) as fh:
+                    head = fh.read(8)
+                    tipe = _magic(head)
+                    if tipe and low.endswith(IMAGE_EXT):
+                        out["payload_tersamar"].append(f"{n}: berkas gambar berisi {tipe}")
+                    elif tipe in ("dex", "elf") and low.startswith(("assets/", "res/raw/")):
+                        out["payload_eksekusi"].append(f"{n}: {tipe}")
+                    if info.file_size <= EICAR_SCAN_LIMIT and EICAR in head + fh.read():
+                        out["eicar"].append(n)
+            except Exception:
+                continue
+    return out
+
+
+def parse(path):
+    """Path APK yang sudah lolos validator -> dict hasil ekstraksi. Init APK/manifest diisolasi: manifest
+    rusak tidak membatalkan scan, hanya menyisakan sinyal tingkat-arsip + tanda manifest_rusak (rule R27)."""
+    galat = []
+    try:
+        a = APK(path)
+        xml = a.get_android_manifest_xml()
+        package = a.get_package()
+    except Exception as exc:  # manifest rusak/disengaja: jangan batalkan scan, lanjut ke jalur zip-only
+        a, xml, package = None, None, None
+        galat.append(f"Manifest APK: {type(exc).__name__}: {exc}")
+    manifest_rusak = xml is None
+    if manifest_rusak and not galat:  # APK terbaca tapi manifest kosong/None tanpa melempar
+        galat.append("Manifest APK: AndroidManifest.xml tidak terbaca (kosong atau rusak).")
     # manifest boleh memakai nama relatif (".Update" atau "Update"); lengkapi dengan package seperti Android
     full = lambda n: n if not n or ("." in n and not n.startswith(".")) else f"{package}{n if n.startswith('.') else '.' + n}"
-    galat = []
 
     def stage(nama, fn, kosong=list):
         """Seperti MobSF: tahap yang gagal dicatat di laporan, tahap lain tetap berjalan."""
@@ -140,16 +238,25 @@ def parse(path):
                                          if IP_ONLY_RE.fullmatch(s) and (":" in s or int(s.split(".")[0]) >= 10)]
     ips = sorted({ip for ip in candidates if IPV4_RE.fullmatch(ip) and all(int(p) <= 255 for p in ip.split("."))})
 
-    permissions = sorted(set(a.get_permissions()))
+    permissions = stage("Izin", lambda: sorted(set(a.get_permissions())))
     signer = stage("Sertifikat", lambda: _signer(a), kosong=dict)
-
-    return {
-        "sha256": sha256_file(path),
-        "package": package,
+    manifest = stage("Atribut manifest", lambda: _manifest(a, xml, full), kosong=dict)
+    nsc = stage("Network security config", lambda: _nsc(path), kosong=dict)
+    arsip = stage("Isi arsip", lambda: _arsip(path), kosong=dict)
+    versi = stage("Versi & SDK", lambda: {
         "version_name": a.get_androidversion_name(),
         "version_code": _int(a.get_androidversion_code()),
         "min_sdk": _int(a.get_min_sdk_version()),
         "target_sdk": _int(a.get_target_sdk_version()),
+    }, kosong=dict)
+
+    return {
+        "sha256": sha256_file(path),
+        "package": package,
+        "version_name": versi.get("version_name"),
+        "version_code": versi.get("version_code"),
+        "min_sdk": versi.get("min_sdk"),
+        "target_sdk": versi.get("target_sdk"),
         "permissions": permissions,
         "dangerous_permissions": [p for p in permissions if p in DANGEROUS],
         "components": components,
@@ -157,5 +264,9 @@ def parse(path):
         "urls": urls,
         "ips": ips,
         "sertifikat": signer,
+        "manifest": manifest,  # untuk rule; tidak ikut ke laporan (seperti texts)
+        "nsc": nsc,
+        "arsip": arsip,
+        "manifest_rusak": manifest_rusak,
         "galat": galat,
     }

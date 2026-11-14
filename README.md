@@ -85,7 +85,7 @@ Berita memakai `region` dan `topic` sebagai pengganti `host`/`src_ip`.
 | Node.js | 20 LTS atau lebih baru | Hanya untuk dashboard Next.js |
 
 Python **tidak perlu** dipasang: semua kode Python berjalan di dalam container (Python 3.11).
-Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner APK), `5432` (PostgreSQL).
+Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner APK), `8002` (scanner web), `5433` (PostgreSQL).
 
 ### Langkah
 
@@ -139,7 +139,8 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
 | http://localhost:3000 | Dashboard (landing, `/pemantauan`, `/log`, `/apk`) |
 | http://localhost:8000/docs | API backend SIEM |
 | http://localhost:8001/docs | API scanner APK |
-| `localhost:5432` | PostgreSQL (user/password/db: `waspada`, hanya untuk demo lokal) |
+| http://localhost:8002/docs | API scanner web (pasif, hanya untuk situs milik sendiri atau berizin) |
+| `localhost:5433` | PostgreSQL (user/password/db: `waspada`, hanya untuk demo lokal) |
 | `localhost:2222` | Server SSH latihan (sumber log demo) |
 
 Semua port hanya bisa diakses dari komputer itu sendiri (`127.0.0.1`), bukan dari perangkat lain di Wi-Fi yang sama. Ini disengaja.
@@ -242,3 +243,5 @@ Semua test di atas, ditambah `tsc`, `eslint`, dan `next build` dashboard, juga d
 ## Pemeriksa APK
 
 Modul analisis statis APK (deteksi pencuri OTP / banking trojan) ada di [`apk-scanner/`](apk-scanner/README.md): service `apk-scanner` (port 8001) dan halaman dashboard `/apk`.
+Modul pemeriksa keamanan web pasif ada di [`web-scanner/`](web-scanner/backend/README.md): service `web-scanner` (port 8002) dan halaman `/web`, `/inventaris`, `/jadwal`.
+Temuan Berbahaya/Mencurigakan dari kedua pemeriksa otomatis masuk ke SIEM sebagai alert (`SIEM_INGEST_URL` di `docker-compose.yml`).

@@ -24,7 +24,7 @@ jobs:
           POSTGRES_USER: waspada
           POSTGRES_PASSWORD: waspada  # DB sekali pakai di runner CI
           POSTGRES_DB: waspada_test
-        ports: ["5432:5432"]
+        ports: ["5433:5432"]  # sama dengan port host db di docker-compose.yml dan default test
         options: >-
           --health-cmd "pg_isready -U waspada"
           --health-interval 2s

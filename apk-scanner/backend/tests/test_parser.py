@@ -100,3 +100,36 @@ def test_bare_short_links_and_glued_font_text(benign_apk, monkeypatch):
     urls = parse(benign_apk("com.politedroid_4.apk"))["urls"]
     assert "https://bit.ly/48Y4K2L" in urls and "https://4cqx.short.gy/85d30e" in urls
     assert not any("southype" in u for u in urls)  # TLD 30 huruf: teks font yang menempel, bukan domain
+def test_corrupt_manifest_falls_back_to_archive_scan(tmp_path, monkeypatch):
+    # manifest rusak tidak boleh membatalkan scan: arsip (EICAR/native/dll) tetap diperiksa, dan jadi tanda R27
+    import zipfile
+    import parser as parser_mod
+
+    def boom(_):
+        raise Exception("AXML rusak")
+
+    monkeypatch.setattr(parser_mod, "APK", boom)
+    apk = tmp_path / "rusak.apk"
+    with zipfile.ZipFile(apk, "w") as z:
+        z.writestr("AndroidManifest.xml", b"ini bukan AXML")
+        z.writestr("classes.dex", b"dex\n035\x00")
+        z.writestr("assets/payload.txt", parser_mod.EICAR)
+    p = parser_mod.parse(str(apk))
+    assert p["manifest_rusak"] is True
+    assert p["package"] is None and p["permissions"] == [] and p["components"] == []
+    assert any(g.startswith("Manifest APK") for g in p["galat"])
+    assert "assets/payload.txt" in p["arsip"]["eicar"]  # muatan tetap terbaca walau manifest gagal
+
+
+def test_one_corrupt_entry_does_not_hide_the_rest(tmp_path):
+    # bit "terenkripsi" palsu diabaikan Android tetapi membuat zipfile melempar; entri lain harus tetap diperiksa
+    import zipfile
+    import parser as parser_mod
+    apk = tmp_path / "x.apk"
+    with zipfile.ZipFile(apk, "w") as z:
+        bad = zipfile.ZipInfo("assets/a.bin")
+        bad.flag_bits |= 0x1
+        z.writestr(bad, b"junk")
+        z.writestr("assets/payload.txt", parser_mod.EICAR)
+    assert "assets/payload.txt" in parser_mod._arsip(str(apk))["eicar"]
+    assert any("EICAR" in t for t in parser_mod._raw_texts(str(apk)))
