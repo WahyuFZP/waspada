@@ -119,7 +119,7 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    docker compose ps
    ```
 
-   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `suricata`, `log-shipper`, `rss-poller`) harus berstatus `Up`, dan `db` serta `backend` berstatus `healthy`.
+   Semua service (`db`, `backend`, `apk-scanner`, `web-scanner`, `web-scheduler`, `ssh-target`, `suricata`, `log-shipper`, `rss-poller`, `news-digest`) harus berstatus `Up`, dan `db`, `backend`, serta `web-scanner` berstatus `healthy`.
 
 4. Jalankan dashboard di terminal lain:
 
@@ -175,6 +175,8 @@ docker compose exec backend python kev.py   # katalog CISA KEV terbaru x assets.
 ```
 
 Berita live dari 34 feed (`backend/feeds.yaml`) dibaca otomatis oleh service **`rss-poller`** setiap 5 menit, mulai begitu backend siap. Hentikan sementara bila perlu menjaga kuota WA: `docker compose stop rss-poller`, lalu `docker compose start rss-poller`.
+
+**Ringkasan berita ke WhatsApp.** Alert korelasi berita jarang terpicu, jadi service **`news-digest`** mengirim satu pesan ringkasan ke grup WhatsApp tim jaga pada jam di `DIGEST_JAM` (bawaan `7,19` WIB): sampai 7 berita teratas sejak pesan sebelumnya, insiden dalam negeri lebih dulu, tanpa berita simulasi dan tanpa judul dobel. Tidak ada berita baru, tidak ada pesan. Lihat isinya tanpa mengirim: `docker compose exec backend python digest.py --once --lihat`. Kirim sekarang: `docker compose exec news-digest python digest.py --once`. Hentikan: `docker compose stop news-digest`.
 
 Semua service memakai `restart: unless-stopped`: setelah Docker atau laptop restart, service menyala lagi sendiri, kecuali yang dihentikan manual dengan `docker compose stop`.
 
