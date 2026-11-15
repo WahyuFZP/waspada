@@ -151,6 +151,26 @@ services:
     mem_limit: 1g
     cpus: 1
     pids_limit: 128
+    # siap = API menjawab; web-scheduler menunggu ini, kalau tidak lintasan pertamanya gagal dan baru dicoba sejam lagi
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/jadwal', timeout=3)"]
+      interval: 5s
+      start_period: 10s
+      retries: 30
+
+  # Pemicu penjadwal re-scan web: tiap jam menjalankan jadwal yang jatuh tempo (interval tiap situs diatur di /jadwal).
+  # Alert ke SIEM/WhatsApp hanya untuk pemindaian dasar dan regresi, bukan setiap lintasan.
+  web-scheduler:
+    build: ./web-scanner/backend
+    restart: unless-stopped
+    command: python scheduler.py --loop 3600 --base http://web-scanner:8000
+    volumes: ["./web-scanner/backend:/app:ro"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    depends_on:
+      web-scanner: {condition: service_healthy}
 
 volumes:
   pgdata:

@@ -64,7 +64,7 @@ class JadwalReq(BaseModel):
     interval_jam: float = 24.0        # jarak antar re-scan (jam)
 
 
-def run_scan(base, host, periksa_berkas, delay, operator, periksa_tls=False):
+def run_scan(base, host, periksa_berkas, delay, operator, periksa_tls=False, kirim_siem=True):
     obs = fetch.observe(base, host, delay=delay, cek_exposed=periksa_berkas)
     findings = rules.evaluate(obs)
     errors = obs.get("errors", [])
@@ -76,7 +76,8 @@ def run_scan(base, host, periksa_berkas, delay, operator, periksa_tls=False):
     nilai = scoring.nilai(findings)
     akhir = final.conclude(findings, nilai)
     hasil = report.build(base, findings, nilai, akhir, errors, operator)
-    siem.kirim(hasil)  # #16 jembatan ke SIEM (opt-in via SIEM_INGEST_URL, fail-safe)
+    if kirim_siem:  # penjadwal memutuskan sendiri kapan mengirim (lihat _pass_jadwal)
+        siem.kirim(hasil)  # #16 jembatan ke SIEM (opt-in via SIEM_INGEST_URL, fail-safe)
     return hasil
 
 
@@ -176,7 +177,7 @@ def _pass_jadwal():
                 continue
             stamp = now.isoformat(timespec="seconds")
             try:  # satu target gagal (scan ATAU simpan/diff) tak boleh menghentikan lintasan
-                laporan = run_scan(row["target"], row["host"], True, 0.5, "penjadwal")
+                laporan = run_scan(row["target"], row["host"], True, 0.5, "penjadwal", kirim_siem=False)
                 db.save(laporan)
                 (DATA / "reports" / f"{laporan['scan_id']}.json").write_text(
                     json.dumps(laporan, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -186,6 +187,10 @@ def _pass_jadwal():
                 else:
                     status, detail = "baru", "pemindaian dasar pertama (belum ada pembanding)"
                 db.update_jadwal(row["id"], stamp, laporan["scan_id"], status, detail)
+                # alert SIEM/WhatsApp hanya saat ada kabar: dasar pertama atau regresi. Postur buruk yang "tetap"
+                # tidak dikirim ulang tiap lintasan, agar satu situs tidak membanjiri grup jaga (dan kuota WA).
+                if status in ("baru", "regresi"):
+                    siem.kirim(laporan)
                 hasil.append({"target": row["target"], "status": status, "detail": detail, "scan_id": laporan["scan_id"]})
             except Exception as exc:
                 db.update_jadwal(row["id"], stamp, row.get("last_scan_id"), "gagal", type(exc).__name__)

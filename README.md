@@ -245,3 +245,4 @@ Semua test di atas, ditambah `tsc`, `eslint`, dan `next build` dashboard, juga d
 Modul analisis statis APK (deteksi pencuri OTP / banking trojan) ada di [`apk-scanner/`](apk-scanner/README.md): service `apk-scanner` (port 8001) dan halaman dashboard `/apk`.
 Modul pemeriksa keamanan web pasif ada di [`web-scanner/`](web-scanner/backend/README.md): service `web-scanner` (port 8002) dan halaman `/web`, `/inventaris`, `/jadwal`.
 Temuan Berbahaya/Mencurigakan dari kedua pemeriksa otomatis masuk ke SIEM sebagai alert (`SIEM_INGEST_URL` di `docker-compose.yml`).
+Situs yang didaftarkan di `/jadwal` dipindai ulang otomatis oleh service `web-scheduler` (dicek tiap jam, interval per situs diatur di halaman itu). Penjadwal hanya mengirim alert untuk pemindaian dasar pertama dan **regresi** (postur memburuk atau temuan tinggi/kritis baru), jadi situs yang tetap bermasalah tidak membanjiri WhatsApp setiap lintasan. Hentikan sementara: `docker compose stop web-scheduler`.
