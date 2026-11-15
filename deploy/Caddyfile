@@ -2,7 +2,10 @@
 # Dashboard memanggil API lewat path di domain yang sama, jadi tidak perlu CORS dan tidak ada port API terbuka.
 # SITE_ALIASES (opsional): alamat lain untuk situs yang sama, mis. alamat sslip.io sebelum domain menyebar di DNS
 {$SITE_ADDRESS} {$SITE_ALIASES} {
-	encode zstd gzip
+	# SSE tidak dikompresi: kompresor menahan aliran sampai ada data, sehingga dashboard baru "Terhubung"
+	# setelah ping pertama dari backend (15 detik)
+	@bukan_sse not path /siem/stream
+	encode @bukan_sse zstd gzip
 
 	basic_auth {
 		{$JURI_USER} {$JURI_HASH}
