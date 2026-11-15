@@ -2,11 +2,10 @@ import Link from "next/link";
 import { LogoMark } from "@/components/logo-mark";
 import { SignalLines } from "@/components/signal-lines";
 
-type Modul = "apk" | "web" | "inventaris" | "jadwal";
+type Modul = "apk" | "web" | "jadwal";
 const MODUL: [Modul, string, string][] = [
   ["apk", "/apk", "Pemeriksa APK"],
   ["web", "/web", "Pemeriksa Web"],
-  ["inventaris", "/inventaris", "Inventaris Aset"],
   ["jadwal", "/jadwal", "Penjadwal"],
 ];
 
