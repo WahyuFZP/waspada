@@ -12,6 +12,7 @@ services:
       SITE_ADDRESS: ${SITE_ADDRESS:?isi SITE_ADDRESS di .env, mis. 1-2-3-4.sslip.io}
       JURI_USER: ${JURI_USER:?isi JURI_USER di .env}
       JURI_HASH: ${JURI_HASH:?isi JURI_HASH di .env (caddy hash-password)}
+      SITE_ALIASES: ${SITE_ALIASES:-}  # opsional: alamat tambahan yang menyajikan situs yang sama, mis. alamat sslip.io
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data        # sertifikat HTTPS; jangan dihapus agar tidak kena batas Let's Encrypt
@@ -21,10 +22,12 @@ services:
   frontend:
     build:
       context: ./frontend
+      # path relatif: dashboard memanggil API di alamat yang sedang dibuka, jadi berjalan di domain utama maupun
+      # SITE_ALIASES, dan ganti domain tidak perlu build ulang
       args:
-        NEXT_PUBLIC_API_URL: https://${SITE_ADDRESS}/siem
-        NEXT_PUBLIC_APK_API_URL: https://${SITE_ADDRESS}/apk-api
-        NEXT_PUBLIC_WEB_API_URL: https://${SITE_ADDRESS}/web-api
+        NEXT_PUBLIC_API_URL: /siem
+        NEXT_PUBLIC_APK_API_URL: /apk-api
+        NEXT_PUBLIC_WEB_API_URL: /web-api
     restart: unless-stopped
     read_only: true
     tmpfs: [/tmp, /app/.next/cache]

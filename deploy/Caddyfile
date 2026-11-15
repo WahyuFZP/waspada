@@ -1,6 +1,7 @@
 # Satu pintu publik untuk WASPADA di VPS: HTTPS otomatis (Let's Encrypt) dan login untuk juri.
 # Dashboard memanggil API lewat path di domain yang sama, jadi tidak perlu CORS dan tidak ada port API terbuka.
-{$SITE_ADDRESS} {
+# SITE_ALIASES (opsional): alamat lain untuk situs yang sama, mis. alamat sslip.io sebelum domain menyebar di DNS
+{$SITE_ADDRESS} {$SITE_ALIASES} {
 	encode zstd gzip
 
 	basic_auth {
@@ -26,4 +27,8 @@
 	handle {
 		reverse_proxy frontend:3000
 	}
+}
+
+www.{$SITE_ADDRESS} {
+	redir https://{$SITE_ADDRESS}{uri} permanent
 }
