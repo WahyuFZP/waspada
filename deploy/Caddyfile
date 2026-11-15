@@ -1,0 +1,29 @@
+# Satu pintu publik untuk WASPADA di VPS: HTTPS otomatis (Let's Encrypt) dan login untuk juri.
+# Dashboard memanggil API lewat path di domain yang sama, jadi tidak perlu CORS dan tidak ada port API terbuka.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	basic_auth {
+		{$JURI_USER} {$JURI_HASH}
+	}
+
+	# /ingest hanya untuk pengirim internal (rss-poller, log-shipper, pemeriksa) di jaringan Docker
+	handle /siem/ingest* {
+		respond "Forbidden" 403
+	}
+	handle_path /siem/* {
+		# flush_interval -1: aliran SSE /stream diteruskan langsung, tidak ditahan di buffer
+		reverse_proxy backend:8000 {
+			flush_interval -1
+		}
+	}
+	handle_path /apk-api/* {
+		reverse_proxy apk-scanner:8000
+	}
+	handle_path /web-api/* {
+		reverse_proxy web-scanner:8000
+	}
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

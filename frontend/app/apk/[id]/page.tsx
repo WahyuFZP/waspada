@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ModuleHeader } from "@/components/module-header";
+import { SiteNav } from "@/components/site-nav";
 import { FinalAnalysisCard } from "@/components/final-analysis";
 import { CountUp, Reveal } from "@/components/reveal";
 import { LearnMore } from "@/components/learn-more";
@@ -67,7 +67,7 @@ export default function ApkResultPage() {
 
   return (
     <>
-      <ModuleHeader active="apk" />
+      <SiteNav active="apk" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-10 md:px-6">
         <Link href="/apk" className="font-data text-xs text-ink-muted hover:text-ink print:hidden">
           ← Periksa APK lain

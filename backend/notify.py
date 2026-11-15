@@ -41,15 +41,22 @@ def wa_text(alert):
     ]))
 
 
+def wa_request(text):
+    """(url, payload, header) untuk mengirim `text` ke WA_ALERT_CHAT lewat OpenWA, atau None bila WA belum diatur."""
+    wa = {k: os.environ.get(k) for k in WA_ENV}
+    if not all(wa.values()):
+        return None
+    url = f"{wa['OPENWA_URL'].rstrip('/')}/api/sessions/{quote(wa['OPENWA_SESSION'], safe='')}/messages/send-text"
+    return url, {"chatId": wa["WA_ALERT_CHAT"], "text": text}, {"X-API-Key": wa["OPENWA_API_KEY"]}
+
+
 def targets(alert):
     """(nama, url, payload, header) untuk tiap kanal yang aktif menurut env."""
     out = []
     if url := os.environ.get("DISCORD_WEBHOOK_URL"):
         out.append(("Discord", url, discord_payload(alert), {}))
-    wa = {k: os.environ.get(k) for k in WA_ENV}
-    if all(wa.values()) and alert["severity"] in WA_SEVERITIES:
-        url = f"{wa['OPENWA_URL'].rstrip('/')}/api/sessions/{quote(wa['OPENWA_SESSION'], safe='')}/messages/send-text"
-        out.append(("WhatsApp", url, {"chatId": wa["WA_ALERT_CHAT"], "text": wa_text(alert)}, {"X-API-Key": wa["OPENWA_API_KEY"]}))
+    if alert["severity"] in WA_SEVERITIES and (req := wa_request(wa_text(alert))):
+        out.append(("WhatsApp", *req))
     return out
 
 

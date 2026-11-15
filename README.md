@@ -119,7 +119,7 @@ Port yang harus kosong: `3000` (dashboard), `8000` (backend), `8001` (scanner AP
    docker compose ps
    ```
 
-   Semua service (`db`, `backend`, `apk-scanner`, `ssh-target`, `suricata`, `log-shipper`, `rss-poller`) harus berstatus `Up`, dan `db` serta `backend` berstatus `healthy`.
+   Semua service (`db`, `backend`, `apk-scanner`, `web-scanner`, `web-scheduler`, `ssh-target`, `suricata`, `log-shipper`, `rss-poller`, `news-digest`) harus berstatus `Up`, dan `db`, `backend`, serta `web-scanner` berstatus `healthy`.
 
 4. Jalankan dashboard di terminal lain:
 
@@ -175,6 +175,8 @@ docker compose exec backend python kev.py   # katalog CISA KEV terbaru x assets.
 ```
 
 Berita live dari 34 feed (`backend/feeds.yaml`) dibaca otomatis oleh service **`rss-poller`** setiap 5 menit, mulai begitu backend siap. Hentikan sementara bila perlu menjaga kuota WA: `docker compose stop rss-poller`, lalu `docker compose start rss-poller`.
+
+**Ringkasan berita ke WhatsApp.** Alert korelasi berita jarang terpicu, jadi service **`news-digest`** mengirim satu pesan ringkasan ke grup WhatsApp tim jaga pada jam di `DIGEST_JAM` (bawaan `7,19` WIB): sampai 7 berita teratas sejak pesan sebelumnya, insiden dalam negeri lebih dulu, tanpa berita simulasi dan tanpa judul dobel. Tidak ada berita baru, tidak ada pesan. Lihat isinya tanpa mengirim: `docker compose exec backend python digest.py --once --lihat`. Kirim sekarang: `docker compose exec news-digest python digest.py --once`. Hentikan: `docker compose stop news-digest`.
 
 Semua service memakai `restart: unless-stopped`: setelah Docker atau laptop restart, service menyala lagi sendiri, kecuali yang dihentikan manual dengan `docker compose stop`.
 
@@ -243,5 +245,6 @@ Semua test di atas, ditambah `tsc`, `eslint`, dan `next build` dashboard, juga d
 ## Pemeriksa APK
 
 Modul analisis statis APK (deteksi pencuri OTP / banking trojan) ada di [`apk-scanner/`](apk-scanner/README.md): service `apk-scanner` (port 8001) dan halaman dashboard `/apk`.
-Modul pemeriksa keamanan web pasif ada di [`web-scanner/`](web-scanner/backend/README.md): service `web-scanner` (port 8002) dan halaman `/web`, `/inventaris`, `/jadwal`.
+Modul pemeriksa keamanan web pasif ada di [`web-scanner/`](web-scanner/backend/README.md): service `web-scanner` (port 8002) serta halaman `/web` dan `/jadwal`.
 Temuan Berbahaya/Mencurigakan dari kedua pemeriksa otomatis masuk ke SIEM sebagai alert (`SIEM_INGEST_URL` di `docker-compose.yml`).
+Situs yang didaftarkan di `/jadwal` dipindai ulang otomatis oleh service `web-scheduler` (dicek tiap jam, interval per situs diatur di halaman itu). Penjadwal hanya mengirim alert untuk pemindaian dasar pertama dan **regresi** (postur memburuk atau temuan tinggi/kritis baru), jadi situs yang tetap bermasalah tidak membanjiri WhatsApp setiap lintasan. Hentikan sementara: `docker compose stop web-scheduler`.

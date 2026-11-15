@@ -59,3 +59,21 @@ def test_verifikasi_teratasi_dan_izin_wajib(monkeypatch):
                         lambda base, host, **k: {"status": 200, "final_url": base + "/", "headers": {},
                                                  "https": base.startswith("https"), "set_cookies": [], "exposed": [], "errors": []})
     assert client.post(f"/webscans/{sid}/verifikasi", params=p, json={"authorized": True}).json()["status"] == "teratasi"
+
+
+def test_penjadwal_mengirim_siem_hanya_saat_dasar_atau_regresi(monkeypatch):
+    target = "https://jadwal.example"
+    terkirim = []
+    monkeypatch.setattr(main.siem, "kirim", lambda lap: terkirim.append(lap["target"]))
+    client.post("/jadwal", json={"target": target, "authorized": True, "interval_jam": 1})
+
+    def lintasan(obs):
+        monkeypatch.setattr(main.fetch, "observe", obs)
+        main.db.conn.execute("UPDATE jadwal SET last_run = NULL WHERE target = ?", (target,))  # paksa jatuh tempo
+        [h] = [h for h in client.post("/jadwal/jalankan").json()["hasil"] if h["target"] == target]
+        return h["status"], terkirim.count(target)
+
+    assert lintasan(_obs) == ("baru", 1)    # dasar pertama: postur kritis dilaporkan sekali
+    assert lintasan(_obs) == ("tetap", 1)   # masih kritis tapi tidak berubah: tidak dikirim ulang
+    tanpa_tls = lambda base, host, **k: {**_obs(base, host), "https": False}  # temuan tinggi baru: HTTP tanpa enkripsi
+    assert lintasan(tanpa_tls) == ("regresi", 2)

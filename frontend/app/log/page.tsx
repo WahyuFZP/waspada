@@ -1,14 +1,11 @@
 "use client";
 
 import { MotionConfig } from "motion/react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AttackerIps } from "@/components/attacker-ips";
-import { ConnectionStatus } from "@/components/connection-status";
 import { ActivityChart, LogStream, SourceStatus } from "@/components/log-panels";
-import { LogoMark } from "@/components/logo-mark";
+import { SiteNav } from "@/components/site-nav";
 import { Reveal } from "@/components/reveal";
-import { SignalLines } from "@/components/signal-lines";
 import { Stat } from "@/components/stats-bar";
 import { useAlertStream } from "@/hooks/use-alert-stream";
 import { API } from "@/lib/api";
@@ -30,35 +27,7 @@ export default function LogPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <SignalLines />
-      <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 font-pixel text-xl font-bold leading-none">
-              <LogoMark className="h-[34px] w-[34px]" />
-              WASPADA
-            </Link>
-            <ul className="font-data hidden gap-6 text-xs text-ink-muted sm:flex">
-              <li>
-                <Link href="/pemantauan" className="hover:text-ink">
-                  Pemantauan
-                </Link>
-              </li>
-              <li>
-                <span aria-current="page" className="text-ink">
-                  Log keamanan
-                </span>
-              </li>
-              <li>
-                <Link href="/apk" className="hover:text-ink">
-                  Pemeriksa APK
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <ConnectionStatus status={status} />
-        </div>
-      </nav>
+      <SiteNav active="log" status={status} wide />
 
       <main className="mx-auto flex max-w-[1400px] flex-col gap-8 px-4 py-10 md:px-6">
         <Reveal>

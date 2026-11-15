@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ModuleHeader } from "@/components/module-header";
+import { SiteNav } from "@/components/site-nav";
 import { formatTime } from "@/lib/api";
 import { listWebscans, type WebSummary } from "@/lib/web";
 
@@ -19,7 +19,7 @@ export default function AuditPage() {
 
   return (
     <>
-      <ModuleHeader active="web" />
+      <SiteNav active="web" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-10 md:px-6">
         <Link href="/web" className="font-data text-xs text-ink-muted hover:text-ink">
           ← Pemeriksa Web

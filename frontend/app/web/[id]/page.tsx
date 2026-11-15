@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ModuleHeader } from "@/components/module-header";
+import { SiteNav } from "@/components/site-nav";
 import { LearnMore } from "@/components/learn-more";
 import { DiffCard } from "@/components/diff-card";
 import { ComplianceCard } from "@/components/compliance-card";
@@ -181,7 +181,7 @@ export default function WebResultPage() {
 
   return (
     <>
-      <ModuleHeader active="web" />
+      <SiteNav active="web" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-10 md:px-6">
         <Link href="/web" className="font-data text-xs text-ink-muted hover:text-ink print:hidden">
           ← Periksa web lain

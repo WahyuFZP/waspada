@@ -1,19 +1,16 @@
 "use client";
 
 import { motion, MotionConfig } from "motion/react";
-import Link from "next/link";
 import { useCallback, useState } from "react";
 import { AlertDetail } from "@/components/alert-detail";
 import { AlertList } from "@/components/alert-list";
 import { AttackerIps } from "@/components/attacker-ips";
-import { ConnectionStatus } from "@/components/connection-status";
 import { CriticalToast } from "@/components/critical-toast";
 import { Hero } from "@/components/hero";
-import { LogoMark } from "@/components/logo-mark";
+import { SiteNav } from "@/components/site-nav";
 import { NewsFeed } from "@/components/news-feed";
 import { PipelineFlow } from "@/components/pipeline-flow";
 import { Reveal } from "@/components/reveal";
-import { SignalLines } from "@/components/signal-lines";
 import { StatsBar } from "@/components/stats-bar";
 import { useAlertStream } from "@/hooks/use-alert-stream";
 import { API } from "@/lib/api";
@@ -43,40 +40,7 @@ export default function Dashboard() {
   return (
     <MotionConfig reducedMotion="user">
       <div inert={selected !== null}>
-        <SignalLines />
-        <nav className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
-          <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 md:px-6">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-2 font-pixel text-xl font-bold leading-none">
-                <LogoMark className="h-[34px] w-[34px]" />
-                WASPADA
-              </Link>
-              <ul className="font-data hidden gap-6 text-xs text-ink-muted sm:flex">
-                <li>
-                  <a href="#pemantauan" className="hover:text-ink">
-                    Pemantauan
-                  </a>
-                </li>
-                <li>
-                  <a href="#arus-berita" className="hover:text-ink">
-                    Arus kejadian
-                  </a>
-                </li>
-                <li>
-                  <Link href="/log" className="hover:text-ink">
-                    Log keamanan
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/apk" className="hover:text-ink">
-                    Pemeriksa APK
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <ConnectionStatus status={status} />
-          </div>
-        </nav>
+        <SiteNav active="pemantauan" status={status} wide />
 
         <Hero status={status} pulseKey={pulseKey} />
 

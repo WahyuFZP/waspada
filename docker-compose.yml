@@ -128,6 +128,31 @@ services:
     security_opt: ["no-new-privileges:true"]
     depends_on:
       backend: {condition: service_healthy}
+
+  # Ringkasan berita ke WhatsApp tim jaga: satu pesan per jam di DIGEST_JAM (WIB) berisi berita teratas sejak
+  # pesan sebelumnya. Alert korelasi tetap dikirim langsung oleh backend. Hentikan: docker compose stop news-digest
+  news-digest:
+    build: ./backend
+    restart: unless-stopped
+    command: python digest.py --loop
+    environment:
+      DATABASE_URL: postgresql://waspada:waspada@db:5432/waspada
+      OPENWA_URL: ${OPENWA_URL:-}
+      OPENWA_API_KEY: ${OPENWA_API_KEY:-}
+      OPENWA_SESSION: ${OPENWA_SESSION:-}
+      WA_ALERT_CHAT: ${WA_ALERT_CHAT:-}
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
+      DIGEST_JAM: ${DIGEST_JAM:-7,19}
+      PYTHONUNBUFFERED: "1"
+    extra_hosts: ["host.docker.internal:host-gateway"]  # OpenWA berjalan di host
+    volumes: ["./backend:/app:ro"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    depends_on:
+      db: {condition: service_healthy}
+
   # Pemeriksa Keamanan Web (pasif): mengambil respons target lalu mengamatinya. Beda dari apk-scanner,
   # service ini butuh egress jaringan. Untuk memindai localhost laptop, jalankan LOKAL (bukan Docker):
   # di dalam container "localhost" adalah container itu sendiri, bukan host.
@@ -151,6 +176,26 @@ services:
     mem_limit: 1g
     cpus: 1
     pids_limit: 128
+    # siap = API menjawab; web-scheduler menunggu ini, kalau tidak lintasan pertamanya gagal dan baru dicoba sejam lagi
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/jadwal', timeout=3)"]
+      interval: 5s
+      start_period: 10s
+      retries: 30
+
+  # Pemicu penjadwal re-scan web: tiap jam menjalankan jadwal yang jatuh tempo (interval tiap situs diatur di /jadwal).
+  # Alert ke SIEM/WhatsApp hanya untuk pemindaian dasar dan regresi, bukan setiap lintasan.
+  web-scheduler:
+    build: ./web-scanner/backend
+    restart: unless-stopped
+    command: python scheduler.py --loop 3600 --base http://web-scanner:8000
+    volumes: ["./web-scanner/backend:/app:ro"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    depends_on:
+      web-scanner: {condition: service_healthy}
 
 volumes:
   pgdata:
