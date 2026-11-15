@@ -41,7 +41,8 @@ export function Reveal({ children, className, delay = 0 }: { children: ReactNode
       className={className}
       initial={reduce ? false : { opacity: 0, y: 56, scale: 0.97 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: 0.15 }}
+      // ambang dalam px, bukan persen tinggi: section yang lebih tinggi dari ±7× layar (ponsel) tak pernah "15% terlihat"
+      viewport={{ once: true, amount: "some", margin: "0px 0px -80px 0px" }}
       transition={{ duration: 0.85, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}

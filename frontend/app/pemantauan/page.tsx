@@ -57,7 +57,9 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 32 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
+            // ambang dalam px, bukan persen tinggi: di ponsel panel ini bisa >10× tinggi layar, sehingga "10% terlihat"
+            // tak pernah tercapai dan panel tetap transparan
+            viewport={{ once: true, amount: "some", margin: "0px 0px -80px 0px" }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
           >
