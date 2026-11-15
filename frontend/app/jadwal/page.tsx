@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ModuleHeader } from "@/components/module-header";
+import { SiteNav } from "@/components/site-nav";
 import { formatTime } from "@/lib/api";
 import { addJadwal, delJadwal, JADWAL_STATUS_STYLE, jalankanJadwal, type Jadwal, listJadwal } from "@/lib/web";
 
@@ -64,7 +64,7 @@ export default function JadwalPage() {
 
   return (
     <>
-      <ModuleHeader active="jadwal" />
+      <SiteNav active="jadwal" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-10 md:px-6">
         <header className="max-w-3xl">
           <h1 className="font-display text-4xl font-bold leading-tight md:text-6xl">Penjadwal re-scan</h1>

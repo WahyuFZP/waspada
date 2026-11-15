@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ModuleHeader } from "@/components/module-header";
+import { SiteNav } from "@/components/site-nav";
 import { formatTime } from "@/lib/api";
 import { listWebscans, POSTUR_STYLE, scanWeb, type WebSummary } from "@/lib/web";
 
@@ -40,7 +40,7 @@ export default function WebScanPage() {
 
   return (
     <>
-      <ModuleHeader active="web" />
+      <SiteNav active="web" />
       <main className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-10 md:px-6">
         <header className="max-w-3xl">
           <h1 className="font-display text-4xl font-bold leading-tight md:text-6xl">Periksa keamanan web Anda</h1>
